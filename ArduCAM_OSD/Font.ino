@@ -2,7 +2,7 @@
 void uploadFont()
 {
     uint16_t byte_count = 0;
-    byte bit_count;
+    byte bit_count = 0;
     byte ascii_binary[0x08];
 
     // move these local to prevent ram usage

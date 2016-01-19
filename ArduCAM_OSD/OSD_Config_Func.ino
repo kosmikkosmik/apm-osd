@@ -58,16 +58,14 @@ void InitializeOSD() {
 // Write our latest FACTORY settings to EEPROM
 void writeSettings() 
 {
-    uint16_t offset = OffsetBITpanel * panel;
-
- 
     writeEEPROM(30,overspeed_ADDR);
     writeEEPROM(0,stall_ADDR);
     writeEEPROM(100,battv_ADDR); //10Volts
     writeEEPROM(6,ch_toggle_ADDR);
-
 }
-void readSettings() {
+
+void readSettings() 
+{
     overspeed = EEPROM.read(overspeed_ADDR);
     stall = EEPROM.read(stall_ADDR);
     battv = EEPROM.read(battv_ADDR);

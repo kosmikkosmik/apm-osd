@@ -17,8 +17,11 @@ void request_mavlink_rates()
         MAV_DATA_STREAM_EXTRA1, 
         MAV_DATA_STREAM_EXTRA2, 
         MAV_DATA_STREAM_EXTRA3};
+
     const uint16_t MAVRates[maxStreams] = {0x02, 0x02, 0x02, 0x05, 0x02, 0x02};
-    for (int i=0; i < maxStreams; i++) {
+    
+    for (int i=0; i < maxStreams; i++) 
+    {
         mavlink_msg_request_data_stream_send(MAVLINK_COMM_0,
             apm_mav_system, apm_mav_component,
             MAVStreams[i], MAVRates[i], 1);
@@ -59,8 +62,6 @@ void read_mavlink()
                 {
                     apm_mav_system    = msg.sysid;
                     apm_mav_component = msg.compid;
-                 //   apm_mav_type      = mavlink_msg_heartbeat_get_type(&msg);            
-                 //   osd_mode = mavlink_msg_heartbeat_get_custom_mode(&msg);
                     osd_mode = (uint8_t)mavlink_msg_heartbeat_get_custom_mode(&msg);
                     //Mode (arducoper armed/disarmed)
                     base_mode = mavlink_msg_heartbeat_get_base_mode(&msg);
@@ -70,10 +71,6 @@ void read_mavlink()
 
                     osd_nav_mode = 0;        
                     osd_mav_status = mavlink_msg_heartbeat_get_system_status(&msg);
-                    //lastMAVBeat = millis();
-                    //if(waitingMAVBeats == 1){
-                    //    enable_mav_request = 1;
-                    //}
                 }
                 break;
             case MAVLINK_MSG_ID_SYS_STATUS:
@@ -176,6 +173,13 @@ void read_mavlink()
                 
                 break;
                 
+            case MAVLINK_MSG_ID_HOME_POSITION:
+                {
+                    warning_timestamp = millis();
+                    strcpy(osd_warning, "got home");
+                }
+                break;
+
             default:
                 //Do nothing
                 break;

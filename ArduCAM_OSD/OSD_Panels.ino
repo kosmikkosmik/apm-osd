@@ -3,7 +3,7 @@ void startPanels()
   do_converts(); // load the unit conversion preferences
 }
 
-boolean shouldEraseFlash()
+boolean shouldEraseFlashText()
 {  
   return ((millis() / 500) % 2 == 1);
 }
@@ -88,9 +88,10 @@ void writePanels()
       panBatteryVoltage(BATTERY_COLUMN, TOP_ROW + 1);
 
       panAlt(LEFT_COLUMN + 6, BOTTOM_ROW);
-      //      if (osd_got_home)
+      panHomeDis(LEFT_COLUMN, BOTTOM_ROW);
+
+      if (osd_got_home)
       {
-          panHomeDis(LEFT_COLUMN, BOTTOM_ROW);
           panHomeDir(ARROW_COLUMN, TOP_ROW + 2);
       }
 
@@ -129,7 +130,7 @@ void panCur_A(int first_col, int first_line){
 void panAlt(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
-    osd.printf("h %.0f", (double)(osd_gps_alt * converth));
+    osd.printf("h %.0f ", round(osd_alt_to_home * converth));
     osd.closePanel();
 }
 
@@ -139,7 +140,7 @@ void panClimb(int first_col, int first_line)
     osd.setPanel(first_col, first_line);
     osd.openPanel();
     vs = (osd_climb * converth * 60) * 0.1;// +vs * 0.9;
-    osd.printf("c %.0f", vs);
+    osd.printf("c %2.0f", vs);
 //    osd.printf("%c%.0f", climbchar, vs);
     osd.closePanel();
 }
@@ -148,7 +149,7 @@ void panClimb(int first_col, int first_line)
 void panHomeAlt(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
-    osd.printf("%c%5.0f",0x12, (double)(osd_alt_to_home * converth));
+    osd.printf("%c%5.0f",0x12, round((osd_alt_to_home * converth)));
     osd.closePanel();
 }
 
@@ -156,7 +157,7 @@ void panVelocity(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
     
-    osd.printf("%c %.0f", 'v',(double)(osd_groundspeed * converts));
+    osd.printf("v %.0f ", (double)(osd_groundspeed * converts));
     osd.closePanel();
 }
 
@@ -224,7 +225,7 @@ void panTime(int first_col, int first_line)
 void panHomeDis(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
-    osd.printf("%c %.0f", 'd', (double)((osd_home_distance) * converth));
+    osd.printf("d %.0f ", (double)((osd_home_distance) * converth));
     osd.closePanel();
 }
 
@@ -247,29 +248,19 @@ void panBatteryPercent(int first_col, int first_line)
     osd.closePanel();
 }
 
-//------------------ Panel: Waiting for MAVLink HeartBeats -------------------------------
-
-//void panWaitMAVBeats(int first_col, int first_line){
-//    panLogo();
-//    osd.setPanel(first_col, first_line);
-//    osd.openPanel();
-//    osd.printf_P(PSTR("Waiting for|MAVLink heartbeats..."));
-//    osd.closePanel();
-//}
-
 
 void panGPSStatus(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
     
-    char* gps_str;
+    const char* gps_str;
     if (gps_fix_type == 3)
     {
       gps_str = " 3d";
     }
     else
     {
-      if (shouldEraseFlash())
+        if (shouldEraseFlashText())
       {
         gps_str = "   ";
       }
@@ -307,13 +298,13 @@ void panEKF(int first_col, int first_line)
     bool should_flash = (osd_ekf_status == EKF_STATUS_BAD);
     bool should_warn = (osd_ekf_status == EKF_STATUS_WARN);
 
-    if (should_warn || (should_flash && shouldEraseFlash()))
+    if (should_warn || (should_flash && shouldEraseFlashText()))
     {
-      osd.printf("%s", "ekf");
+      osd.print("ekf");
     }
     else
     {
-      osd.printf("%s", "   ");
+      osd.print("   ");
     }
   
     osd.closePanel();
@@ -369,14 +360,12 @@ void panStatus(int first_col, int first_line)
     osd.openPanel();
     osd.print(str);
     osd.closePanel();
-
-//    displayCentered(first_line, 12, str);
 }
 
 
 void panFlightMode(int first_col, int first_line)
 {
-    char* mode_str="";
+    const char* mode_str = "";
     boolean should_flash = false;
     
     if (osd_mode == 0) 
@@ -440,7 +429,7 @@ void panFlightMode(int first_col, int first_line)
     }
     else if (osd_mode == 16)
     {
-      mode_str = "gps ";
+      mode_str = "phld";
     }
     else if (osd_mode == 17)
     {
@@ -452,7 +441,7 @@ void panFlightMode(int first_col, int first_line)
       should_flash = true;      
     }
         
-    if (should_flash && (shouldEraseFlash()))
+    if (should_flash && (shouldEraseFlashText()))
     {
       mode_str = "    ";
     }
@@ -461,7 +450,6 @@ void panFlightMode(int first_col, int first_line)
     osd.openPanel();
     osd.print(mode_str);
     osd.closePanel();
-//    displayCentered(first_line, 4, mode_str);
 }
 
 
