@@ -71,6 +71,26 @@ void read_mavlink()
 
                     osd_nav_mode = 0;        
                     osd_mav_status = mavlink_msg_heartbeat_get_system_status(&msg);
+
+                    // Send a heartbeat over UART0 including the system type
+                    /*
+                    * @param type Type of the MAV(quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
+                        * @param autopilot Autopilot type / class.defined in MAV_AUTOPILOT ENUM
+                        * @param base_mode System mode bitfield, see MAV_MODE_FLAG ENUM in mavlink / include / mavlink_types.h
+                        * @param custom_mode A bitfield for use for autopilot - specific flags.
+                        * @param system_status System status flag, see MAV_STATE ENUM
+                        * /
+
+                        mavlink_msg_request_data_stream_send(MAVLINK_COMM_0,
+                        apm_mav_system, apm_mav_component
+                        */
+                    
+                    mavlink_msg_heartbeat_send(MAVLINK_COMM_0,
+                        mavlink_msg_heartbeat_get_type(&msg),
+                        mavlink_msg_heartbeat_get_autopilot(&msg),
+                        base_mode,
+                        mavlink_msg_heartbeat_get_custom_mode(&msg),
+                        mavlink_msg_heartbeat_get_system_status(&msg));
                 }
                 break;
             case MAVLINK_MSG_ID_SYS_STATUS:
@@ -176,7 +196,7 @@ void read_mavlink()
             case MAVLINK_MSG_ID_HOME_POSITION:
                 {
                     warning_timestamp = millis();
-                    strcpy(osd_warning, "got home");
+                    strcpy(osd_warning, "got home!");
                 }
                 break;
 
