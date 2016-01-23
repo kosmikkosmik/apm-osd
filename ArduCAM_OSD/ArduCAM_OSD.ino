@@ -40,6 +40,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 /* ************************************************************ */
 
 #undef PROGMEM 
+#include "DistanceAlert.h"
 #define PROGMEM __attribute__(( section(".progmem.data") )) 
 
 #undef PSTR 
@@ -119,6 +120,7 @@ void setup()
     // Prepare OSD for displaying 
     unplugSlaves();
     osd.init();
+    DistanceAlert.init();
 
     // Start 
     startPanels();

@@ -340,14 +340,14 @@ void panStatus(int first_col, int first_line)
             break;
 
 /*        case MAV_STATE_POWEROFF:
-            str = "off";
+            str = "off"; */
             break;
 
         case MAV_STATE_STANDBY:
-            str = " ";
+            str = "  ";
             break;
 
-        case MAV_STATE_UNINIT:
+/*        case MAV_STATE_UNINIT:
             str = " ";
             break; */
 

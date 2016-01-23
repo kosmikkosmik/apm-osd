@@ -45,7 +45,7 @@ char setBatteryPic(uint16_t bat_level)
 
 void setHomeVars(OSD &osd)
 {
-  float dstlon, dstlat;
+/*  float dstlon, dstlat;
   long bearing;
   
   osd_alt_to_home = (osd_alt - osd_home_alt);
@@ -53,7 +53,7 @@ void setHomeVars(OSD &osd)
   if (motor_armed ^ last_armed){
     //If motors armed, reset home in Arducopter version
     osd_got_home = !motor_armed;
-  }
+  } 
   last_armed = motor_armed;
   if(!osd_got_home && gps_fix_type > 1){
     osd_home_lat = osd_lat;
@@ -98,7 +98,7 @@ void setHomeVars(OSD &osd)
     if(bearing < 0) bearing += 360; //normalization
     osd_home_direction = ((int)round((float)(bearing/360.0f) * 16.0f) % 16) + 1;//array of arrows =)
     //if(osd_home_direction > 16) osd_home_direction = 1;
-  }
+  } */
 }
 
 void setFdataVars(){

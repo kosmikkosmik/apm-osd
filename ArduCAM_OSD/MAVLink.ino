@@ -54,7 +54,18 @@ void read_mavlink()
         //trying to grab msg  
         if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) 
         {
-            mavlink_active = 1;
+            if (!mavlink_active)
+            {
+                mavlink_active = 1;
+                request_mavlink_rates();
+
+                // Make modules request their stuff
+                DistanceAlert.requestData(apm_mav_system, apm_mav_component);
+            }
+
+            DistanceAlert.handleMessage(&msg);
+
+
             //handle msg
             switch(msg.msgid) 
             {
@@ -72,25 +83,6 @@ void read_mavlink()
                     osd_nav_mode = 0;        
                     osd_mav_status = mavlink_msg_heartbeat_get_system_status(&msg);
 
-                    // Send a heartbeat over UART0 including the system type
-                    /*
-                    * @param type Type of the MAV(quadrotor, helicopter, etc., up to 15 types, defined in MAV_TYPE ENUM)
-                        * @param autopilot Autopilot type / class.defined in MAV_AUTOPILOT ENUM
-                        * @param base_mode System mode bitfield, see MAV_MODE_FLAG ENUM in mavlink / include / mavlink_types.h
-                        * @param custom_mode A bitfield for use for autopilot - specific flags.
-                        * @param system_status System status flag, see MAV_STATE ENUM
-                        * /
-
-                        mavlink_msg_request_data_stream_send(MAVLINK_COMM_0,
-                        apm_mav_system, apm_mav_component
-                        */
-                    
-                    mavlink_msg_heartbeat_send(MAVLINK_COMM_0,
-                        mavlink_msg_heartbeat_get_type(&msg),
-                        mavlink_msg_heartbeat_get_autopilot(&msg),
-                        base_mode,
-                        mavlink_msg_heartbeat_get_custom_mode(&msg),
-                        mavlink_msg_heartbeat_get_system_status(&msg));
                 }
                 break;
             case MAVLINK_MSG_ID_SYS_STATUS:
@@ -123,33 +115,14 @@ void read_mavlink()
                 break;
             case MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT:
                 {
-//                  nav_roll = mavlink_msg_nav_controller_output_get_nav_roll(&msg);
-//                  nav_pitch = mavlink_msg_nav_controller_output_get_nav_pitch(&msg);
-//                  nav_bearing = mavlink_msg_nav_controller_output_get_nav_bearing(&msg);
                   wp_target_bearing = mavlink_msg_nav_controller_output_get_target_bearing(&msg);
                   wp_dist = mavlink_msg_nav_controller_output_get_wp_dist(&msg);
-//                  alt_error = mavlink_msg_nav_controller_output_get_alt_error(&msg);
-//                  aspd_error = mavlink_msg_nav_controller_output_get_aspd_error(&msg);
-                  xtrack_error = mavlink_msg_nav_controller_output_get_xtrack_error(&msg);
                 }
                 break;
 
             case MAVLINK_MSG_ID_MISSION_CURRENT:
                 {
                     wp_number = (uint8_t)mavlink_msg_mission_current_get_seq(&msg);
-                }
-                break;
-
-            case MAVLINK_MSG_ID_WIND:
-                {
-                    osd_winddirection = abs(mavlink_msg_wind_get_direction(&msg)); // 0..360 deg, 0=north
-                    osd_windspeed = mavlink_msg_wind_get_speed(&msg); //m/s
-//                    osd_windspeedz = mavlink_msg_wind_get_speed_z(&msg); //m/s
-                }
-                break;
-            case MAVLINK_MSG_ID_SCALED_PRESSURE:
-                {
-                    temperature = mavlink_msg_scaled_pressure_get_temperature(&msg);
                 }
                 break;
                 
@@ -197,8 +170,10 @@ void read_mavlink()
                 {
                     warning_timestamp = millis();
                     strcpy(osd_warning, "got home!");
+                    osd_got_home = true;
                 }
                 break;
+
 
             default:
                 //Do nothing
