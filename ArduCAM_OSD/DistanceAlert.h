@@ -13,17 +13,11 @@
 
 #include "../GCS_MAVLink/include/mavlink/v1.0/mavlink_types.h"
 
+class BatteryClass;
+
 class DistanceAlertClass
 {
  protected:
-    // parameters
-    float m_WPNAV_SPEED;
-    float m_WPNAV_SPEED_DN;
-    float m_WPNAV_SPEED_UP;
-    float m_RTL_ALT;
-    float m_RTL_ALT_FINAL;
-    float m_LAND_SPEED;
-
     // home position
     bool  m_hasHomePosition;
     float m_homeLongtitude;
@@ -37,25 +31,26 @@ class DistanceAlertClass
 
     float m_horizontalDistance;
 
-    unsigned long m_takeoffTime;
-    uint8_t m_batteryAtTakeoff;
-    uint8_t m_batteryRemaining;
-
     uint8_t m_system;
     uint8_t m_component;
+    BatteryClass*    m_pBattery;
 
-    void requestParameter(const char* pParamId);
 
  public:
-	void init();
+	void init(BatteryClass* pBattery);
 
     void requestData(uint8_t system, uint8_t component);
     void handleMessage(const mavlink_message_t* pMsg);
 
     bool hasHomePosition() const { return m_hasHomePosition; }
-    float getMaxFlightTime() const;
-    float getMaxHeight() const;
-    float getMaxDistance() const;
+    float getDistanceToHome() const { return m_horizontalDistance; }
+    float getAltitudeToHome() const { return m_altitude - m_homeAltitude; }
+
+    uint16_t getMaxFlightTime() const;
+
+private:
+    void recalculate();
+    float getDistance(float lat1, float long1, float lat2, float long2) const;
 };
 
 extern DistanceAlertClass DistanceAlert;

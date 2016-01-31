@@ -40,6 +40,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 /* ************************************************************ */
 
 #undef PROGMEM 
+#include "ParameterManager.h"
+#include "Battery.h"
 #include "DistanceAlert.h"
 #define PROGMEM __attribute__(( section(".progmem.data") )) 
 
@@ -113,26 +115,17 @@ void setup()
     // setup mavlink port
     mavlink_comm_0_port = &Serial;
 
-#ifdef membug
-    Serial.println(freeMem());
-#endif
-
     // Prepare OSD for displaying 
     unplugSlaves();
     osd.init();
-    DistanceAlert.init();
+    ParameterManager.init();
+    Battery.init(&ParameterManager);
+    DistanceAlert.init(&Battery);
 
     // Start 
     startPanels();
     delay(500);
 
-    // OSD debug for development (Shown at start)
-#ifdef membug
-    osd.setPanel(1,1);
-    osd.openPanel();
-    osd.printf("%i",freeMem()); 
-    osd.closePanel();
-#endif
 
     // Just to easy up development things
 #ifdef FORCEINIT
@@ -140,11 +133,6 @@ void setup()
 #endif
 
 
-    // Get correct panel settings from EEPROM
-    readSettings();
-
-    panel = 0; //set panel to 0 to start in the first navigation screen
-    // Show bootloader bar
     //loadBar();
     delay(2000);
     Serial.flush();
@@ -199,8 +187,7 @@ void OnMavlinkTimer()
 
     setHomeVars(osd);   // calculate and set Distance from home and Direction to home
     
-    writePanels();       // writing enabled panels (check OSD_Panels Tab)
-    
+    writePanels();       // writing enabled panels (check OSD_Panels Tab)    
     setFdataVars();
 }
 

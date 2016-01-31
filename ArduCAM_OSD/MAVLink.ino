@@ -2,7 +2,7 @@
 #include "../GCS_MAVLink/include/mavlink/v1.0/ardupilotmega/mavlink.h"
 
 // true when we have received at least 1 MAVLink packet
-static bool mavlink_active;
+static bool mavlinkActive = false;
 static uint8_t crlf_count = 0;
 
 static int packet_drops = 0;
@@ -32,15 +32,15 @@ void read_mavlink()
 {
     mavlink_message_t msg; 
     mavlink_status_t status;
+    memset(&status, 0, sizeof(mavlink_status_t));
 
-    //grabing data 
     while (Serial.available() > 0) 
     { 
         uint8_t c = Serial.read();
 
         /* allow CLI to be started by hitting enter 3 times, if no
         heartbeat packets have been received */
-        if (mavlink_active == 0 && millis() < 20000 && millis() > 5000) {
+        if (!mavlinkActive && (millis() < 20000) && (millis() > 5000)) {
             if (c == '\n' || c == '\r') {
                 crlf_count++;
             } else {
@@ -54,55 +54,56 @@ void read_mavlink()
         //trying to grab msg  
         if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) 
         {
-            if (!mavlink_active)
-            {
-                mavlink_active = 1;
-                request_mavlink_rates();
-
-                // Make modules request their stuff
-                DistanceAlert.requestData(apm_mav_system, apm_mav_component);
-            }
-
+            ParameterManager.handleMessage(&msg);
             DistanceAlert.handleMessage(&msg);
-
 
             //handle msg
             switch(msg.msgid) 
             {
+
             case MAVLINK_MSG_ID_HEARTBEAT:
                 {
                     apm_mav_system    = msg.sysid;
                     apm_mav_component = msg.compid;
                     osd_mode = (uint8_t)mavlink_msg_heartbeat_get_custom_mode(&msg);
-                    //Mode (arducoper armed/disarmed)
-                    base_mode = mavlink_msg_heartbeat_get_base_mode(&msg);
-                    //if(getBit(base_mode,7)) motor_armed = 1;
-                    //else motor_armed = 0;
-                    motor_armed = getBit(base_mode,7);
+                    uint8_t baseMode = mavlink_msg_heartbeat_get_base_mode(&msg);
+                    armed = getBit(baseMode, 7);
 
-                    osd_nav_mode = 0;        
                     osd_mav_status = mavlink_msg_heartbeat_get_system_status(&msg);
 
-                }
-                break;
-            case MAVLINK_MSG_ID_SYS_STATUS:
-                {
+                    if (!mavlinkActive)
+                    {
+                        mavlinkActive = 1;
+                        osd_clear = true;
+                        request_mavlink_rates();
 
-                    osd_vbat_A = (mavlink_msg_sys_status_get_voltage_battery(&msg) / 1000.0f); //Battery voltage, in millivolts (1 = 1 millivolt)
-                    osd_curr_A = mavlink_msg_sys_status_get_current_battery(&msg); //Battery current, in 10*milliamperes (1 = 10 milliampere)         
-                    osd_battery_remaining_A = mavlink_msg_sys_status_get_battery_remaining(&msg); //Remaining battery energy: (0%: 0, 100%: 100)
+                        // Make modules request their stuff
+                        DistanceAlert.requestData(apm_mav_system, apm_mav_component);
+                        ParameterManager.requestData(apm_mav_system, apm_mav_component);
+                    }
+
                 }
                 break;
+
+            case MAVLINK_MSG_ID_RC_CHANNELS:
+            {
+                uint16_t rc = mavlink_msg_rc_channels_get_chan9_raw(&msg);
+                Panel newPanel = (rc > 1500) ? Panel_Main : Panel_Debug;
+                if (newPanel != activePanel)
+                {
+                    activePanel = newPanel;
+                    osd_clear = true;
+                }
+            }
+            break;
 
             case MAVLINK_MSG_ID_GPS_RAW_INT:
                 {
-                    osd_gps_alt = mavlink_msg_gps_raw_int_get_alt(&msg) / 1000.0f;
-                    osd_lat = mavlink_msg_gps_raw_int_get_lat(&msg) / 10000000.0f;
-                    osd_lon = mavlink_msg_gps_raw_int_get_lon(&msg) / 10000000.0f;
                     gps_fix_type = mavlink_msg_gps_raw_int_get_fix_type(&msg);
                     osd_cog = mavlink_msg_gps_raw_int_get_cog(&msg);
                 }
-                break; 
+                break;
+
             case MAVLINK_MSG_ID_VFR_HUD:
                 {
                     osd_airspeed = mavlink_msg_vfr_hud_get_airspeed(&msg);
@@ -113,18 +114,7 @@ void read_mavlink()
                     osd_climb = mavlink_msg_vfr_hud_get_climb(&msg);
                 }
                 break;
-            case MAVLINK_MSG_ID_NAV_CONTROLLER_OUTPUT:
-                {
-                  wp_target_bearing = mavlink_msg_nav_controller_output_get_target_bearing(&msg);
-                  wp_dist = mavlink_msg_nav_controller_output_get_wp_dist(&msg);
-                }
-                break;
 
-            case MAVLINK_MSG_ID_MISSION_CURRENT:
-                {
-                    wp_number = (uint8_t)mavlink_msg_mission_current_get_seq(&msg);
-                }
-                break;
                 
             case MAVLINK_MSG_ID_STATUSTEXT:
                 {
@@ -166,14 +156,6 @@ void read_mavlink()
                 
                 break;
                 
-            case MAVLINK_MSG_ID_HOME_POSITION:
-                {
-                    warning_timestamp = millis();
-                    strcpy(osd_warning, "got home!");
-                    osd_got_home = true;
-                }
-                break;
-
 
             default:
                 //Do nothing

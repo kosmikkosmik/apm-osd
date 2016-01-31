@@ -53,70 +53,111 @@ const int WARNING_ROW = 4;
 
 void writePanels()
 { 
-  //Only show flight summary 10 seconds after landing and if throttle < 15
-  if ((landed_at_time != 4294967295) && ((((millis() - landed_at_time) / 10000) % 2) == 0))
-  { 
-    if (osd_clear == 0)
-    {
-       osd.clear();
-       osd_clear = 1;
-    }
-    panFdata(); 
-
-  }
-  else
-  { 
-    panWarn(LEFT_COLUMN, WARNING_ROW);
-    panFlightMode(GPS_COLUMN - 5, TOP_ROW);
-    panStatus(GPS_COLUMN - 5, TOP_ROW + 1);
-
     //Check for panel toggle
     if (osd_clear == 1)
     {
-      osd.clear();
-      osd_clear = 0;
+        osd.clear();
+        osd_clear = 0;
     }
 
-    if (panel != npanels)
+    if (!mavlinkActive)
     {
-      panGPSStatus(GPS_COLUMN, TOP_ROW);
-      panEKF(GPS_COLUMN, TOP_ROW + 1);
+        osd.setPanel(3,10);
+        osd.openPanel();
+        osd.printf_P(PSTR("waiting for heartbeat...")); 
+        osd.closePanel();
 
-      panTime(TIME_COLUMN, TOP_ROW);
-
-      panBatteryPercent(BATTERY_COLUMN, TOP_ROW);
-      panBatteryVoltage(BATTERY_COLUMN, TOP_ROW + 1);
-
-      panAlt(LEFT_COLUMN + 6, BOTTOM_ROW);
-      panHomeDis(LEFT_COLUMN, BOTTOM_ROW);
-
-      if (osd_got_home)
-      {
-          panHomeDir(ARROW_COLUMN, TOP_ROW + 2);
-      }
-
-
-      panVelocity(RIGHT_COLUMN - 6, BOTTOM_ROW);
-      panClimb(RIGHT_COLUMN, BOTTOM_ROW);
-            
+        return;
     }
-  }  
+
+    if (!ParameterManager.isInSync())
+    {
+        ParameterManager.showDiagnostics(osd);
+        return;
+    }
+
+    if (activePanel == Panel_Main)
+    {
+        panWarn(LEFT_COLUMN, WARNING_ROW);
+        panFlightMode(GPS_COLUMN - 5, TOP_ROW);
+        panStatus(GPS_COLUMN - 5, TOP_ROW + 1);
+
+        panGPSStatus(GPS_COLUMN, TOP_ROW);
+        panEKF(GPS_COLUMN, TOP_ROW + 1);
+
+        panTime(TIME_COLUMN, TOP_ROW);
+
+        panBatteryPercent(BATTERY_COLUMN, TOP_ROW);
+        panBatteryVoltage(BATTERY_COLUMN, TOP_ROW + 1);
+
+        panAlt(LEFT_COLUMN + 6, BOTTOM_ROW);
+        panHomeDis(LEFT_COLUMN, BOTTOM_ROW);
+
+        if (DistanceAlert.hasHomePosition())
+        {
+            panHomeDir(ARROW_COLUMN, TOP_ROW + 2);
+        }
+
+        panVelocity(RIGHT_COLUMN - 6, BOTTOM_ROW);
+        panClimb(RIGHT_COLUMN, BOTTOM_ROW);            
+    }
+    else if (activePanel == Panel_Debug)
+    {
+//        ParameterManager.showDiagnostics(osd);
+        writeDebugPanel();
+    }       
 }
 
-
-void panFdata(){
-     osd.setPanel(11, 4);
-    osd.openPanel();                          
-    osd.printf("%c%3i%c%02i|%c%5i%c|%c%5i%c|%c%5i%c|%c%5i%c|%c%10.6f|%c%10.6f", 0x08,((int)start_Time/60)%60,0x3A,(int)start_Time%60, 0x0B, (int)((max_home_distance) * converth), high, 0x8F, (int)((tdistance) * converth), high,0x14,(int)(max_osd_groundspeed * converts),spe,0x12, (int)(max_osd_home_alt * converth), high, 0x03, (double)osd_lat, 0x04, (double)osd_lon);
-    osd.closePanel();
-}
-
-
-
-void panCur_A(int first_col, int first_line){
-    osd.setPanel(first_col, first_line);
+void writeDebugPanel()
+{
+    osd.setPanel(1, 1);
     osd.openPanel();
-    osd.printf("%c%5.2f%c", 0xBD, (float(osd_curr_A) * .01), 0x0E);
+    osd.printf_P(PSTR("batt total: %i  "), Battery.GetTotalCapacity());
+    osd.closePanel();
+
+    osd.setPanel(1, 2);
+    osd.openPanel();
+    osd.printf_P(PSTR("batt remaining: %i   "), Battery.GetRemainingCapacity());
+    osd.closePanel();
+
+    osd.setPanel(1, 3);
+    osd.openPanel();
+    osd.printf_P(PSTR("got home: %i   "), DistanceAlert.hasHomePosition());
+    osd.closePanel();
+
+    osd.setPanel(1, 4);
+    osd.openPanel();
+    osd.printf_P(PSTR("max flight time (sec): %i   "), DistanceAlert.getMaxFlightTime());
+    osd.closePanel();
+
+    osd.setPanel(1, 5);
+    osd.openPanel();
+    osd.printf_P(PSTR("f/s capacity: %i   "), Battery.GetFailsafeCapacity());
+    osd.closePanel();
+
+    osd.setPanel(1, 6);
+    osd.openPanel();
+    osd.printf_P(PSTR("dischange rate: %i   "), Battery.GetDischargeRate());
+    osd.closePanel();
+
+    osd.setPanel(1, 7);
+    osd.openPanel();
+    osd.printf_P(PSTR("WPNAV_SPEED (m/sec): %.1f   "), ParameterManager.getParameter(ParameterManagerClass::WPNAV_SPEED));
+    osd.closePanel();
+
+    osd.setPanel(1, 8);
+    osd.openPanel();
+    osd.printf_P(PSTR("WPNAV_SPEED_DN (m/sec): %.1f   "), ParameterManager.getParameter(ParameterManagerClass::WPNAV_SPEED_DN));
+    osd.closePanel();
+
+    osd.setPanel(1, 9);
+    osd.openPanel();
+    osd.printf_P(PSTR("packet drops: %i"), packet_drops);
+    osd.closePanel();
+
+    osd.setPanel(1, 10);
+    osd.openPanel();
+    osd.printf_P(PSTR("parse errors: %i"), parse_error);
     osd.closePanel();
 }
 
@@ -130,7 +171,7 @@ void panCur_A(int first_col, int first_line){
 void panAlt(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
-    osd.printf("h %.0f ", round(osd_alt_to_home * converth));
+    osd.printf("h %.0f ", round(DistanceAlert.getAltitudeToHome()));
     osd.closePanel();
 }
 
@@ -139,8 +180,7 @@ void panClimb(int first_col, int first_line)
 {
     osd.setPanel(first_col, first_line);
     osd.openPanel();
-    vs = (osd_climb * converth * 60) * 0.1;// +vs * 0.9;
-    osd.printf("c %2.0f", vs);
+    osd.printf("c %2.0f", (osd_climb * converth * 60) * 0.1);
 //    osd.printf("%c%.0f", climbchar, vs);
     osd.closePanel();
 }
@@ -149,7 +189,7 @@ void panClimb(int first_col, int first_line)
 void panHomeAlt(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
-    osd.printf("%c%5.0f",0x12, round((osd_alt_to_home * converth)));
+    osd.printf("%c%5.0f",0x12, DistanceAlert.getAltitudeToHome());
     osd.closePanel();
 }
 
@@ -174,14 +214,6 @@ void panWarn(int first_col, int first_line)
     }
 }
 
-  
-/* **************************************************************** */
-// Panel  : panThr
-// Needs  : X, Y locations
-// Output : Throttle value from MAVlink with symbols
-// Size   : 1 x 7  (rows x chars)
-// Staus  : done
-
 void panThr(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
@@ -190,19 +222,11 @@ void panThr(int first_col, int first_line){
 }
 
 
-/* **************************************************************** */
-// Panel  : panTime
-// Needs  : X, Y locations
-// Output : Time from start with symbols
-// Size   : 1 x 7  (rows x chars)
-// Staus  : done
-
 void panTime(int first_col, int first_line)
 {
     osd.setPanel(first_col, first_line);
     osd.openPanel();
     
-//    osd.printf("%c%2i%c%02i", 0x08, ((int)start_Time / 60) % 60, 0x3A, (int)start_Time % 60);
     if (start_Time >= 0)
     {
         osd.printf("%2i%c%02i", ((int)start_Time / 60) % 60, 0x3A, (int)start_Time % 60);
@@ -215,17 +239,10 @@ void panTime(int first_col, int first_line)
     osd.closePanel();
 }
 
-/* **************************************************************** */
-// Panel  : panHomeDis
-// Needs  : X, Y locations
-// Output : Home Symbol with distance to home in meters
-// Size   : 1 x 7  (rows x chars)
-// Staus  : done
-
 void panHomeDis(int first_col, int first_line){
     osd.setPanel(first_col, first_line);
     osd.openPanel();
-    osd.printf("d %.0f ", (double)((osd_home_distance) * converth));
+    osd.printf("d %.0f ", DistanceAlert.getDistanceToHome());
     osd.closePanel();
 }
 
@@ -235,7 +252,7 @@ void panBatteryVoltage(int first_col, int first_line)
     osd.setPanel(first_col, first_line);
     osd.openPanel();
 //    osd.printf("%c%5.1f", 0xBC, (double)osd_vbat_A);
-    osd.printf("%c %.1f", 0x17, (double)osd_vbat_A);
+    osd.printf("%c %.1f", 0x17, Battery.GetVoltage());
     osd.closePanel();
 }
 
@@ -244,7 +261,7 @@ void panBatteryPercent(int first_col, int first_line)
     osd.setPanel(first_col, first_line);
     osd.openPanel();
 
-    osd.printf_P(PSTR("%% %i "), osd_battery_remaining_A);
+    osd.printf_P(PSTR("%% %i "), Battery.GetBatteryPercentage());
     osd.closePanel();
 }
 
@@ -462,8 +479,8 @@ void showArrow(uint8_t rotate_arrow,uint8_t method) {
     arrow_set1 += rotate_arrow * 2 - 2;
     //arrow_set2 = arrow_set1 + 1;
 //    if(method == 1) osd.printf("%c%3.0f%c|%c%c%2.0f%c",0x1D,(double)(osd_windspeed * converts),spe, (byte)arrow_set1, (byte)(arrow_set1 + 1),(double)(osd_windspeedz * converts),spe);
-    if(method == 1) osd.printf("%c%3.0f%c|%c%c%2.0f%c",0x1d,(double)(osd_windspeed * converts),spe, arrow_set1, arrow_set1 + 1,(double)(nor_osd_windspeed * converts),spe);
-    else if(method == 2) osd.printf("%c%c%4i%c", arrow_set1, arrow_set1 + 1, off_course, 0x05);   
+//    if(method == 1) osd.printf("%c%3.0f%c|%c%c%2.0f%c",0x1d,(double)(osd_windspeed * converts),spe, arrow_set1, arrow_set1 + 1,(double)(nor_osd_windspeed * converts),spe);
+    /*else*/ if(method == 2) osd.printf("%c%c%4i%c", arrow_set1, arrow_set1 + 1, off_course, 0x05);   
     else osd.printf("%c%c", arrow_set1, arrow_set1 + 1);
 }
 
@@ -500,46 +517,6 @@ void showArrow(uint8_t rotate_arrow,uint8_t method) {
 #define ANGLE_2			25			// angle above we switch to line set 2
 
 
-// Calculate and shows verical speed aid
-void showILS(int start_col, int start_row) { 
-    //Show line on panel center because horizon line can be
-    //high or low depending on pitch attitude
-    int subval_char = 0xCF;
-
-    //shift alt interval from [-5, 5] to [0, 10] interval, so we
-    //can work with remainders.
-    //We are using a 0.2 altitude units as resolution (1 decimal place)
-    //so convert we convert it to times 10 to work 
-    //only with integers and save some bytes
-    //int alt = (osd_alt_to_home * converth + 5) * 10;
-    int alt = (osd_alt_to_home * converth + 5) * 4.4; //44 possible position 5 rows times 9 chars
-    
-    if((alt < 44) && (alt > 0)){
-        //We have 9 possible chars
-        //(alt * 5) -> 5 represents 1/5 which is our resolution. Every single
-        //line (char) change represents 0,2 altitude units
-        //% 10 -> Represents our 10 possible characters
-        //9 - -> Inverts our selected char because when we gain altitude
-        //the selected char has a lower position in memory
-        //+ 5 -> Is the memory displacement od the first altitude charecter 
-        //in memory (it starts at 0x05
-        //subval_char = (99 - ((alt * 5) % 100)) / 9 + 0xC7;
-        subval_char = (8 - (alt  % 9)) + 0xC7;
-        //Each row represents 2 altitude units
-        start_row += (alt / 9);
-    }
-    else if(alt >= 44){
-        //Copter is too high. Ground is way too low to show on panel, 
-        //so show down arrow at the bottom
-        subval_char = 0xC8; 
-        start_row += 4;
-    }
-
-    //Enough calculations. Let's show the result
-    osd.openSingle(start_col + AH_COLS + 2, start_row);
-    osd.printf("%c", subval_char);
-}
-
 void do_converts()
 {
     if (EEPROM.read(measure_ADDR) == 0) {
@@ -547,9 +524,6 @@ void do_converts()
         converth = 1.0;
         spe = 0x10;
         high = 0x0C;
-        temps = 0xBA;
-        tempconv = 10;
-        tempconvAdd = 0;
         distchar = 0x1B;
         distconv = 1000;
         climbchar = 0x1A;
@@ -558,9 +532,6 @@ void do_converts()
         converth = 3.28;
         spe = 0x19;
         high = 0x66;
-        temps = 0xBB;
-        tempconv = 18;
-        tempconvAdd = 3200;
         distchar = 0x1C;
         distconv = 5280;
         climbchar = 0x1E;

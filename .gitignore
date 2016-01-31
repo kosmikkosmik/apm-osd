@@ -45,3 +45,13 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+*.project
+*.suo
+*.elf
+ArduCAM_OSD/Release/ArduCAM_OSD.hex
+ArduCAM_OSD/Release/ArduCAM_OSD.log
+ArduCAM_OSD/Release/ArduCAM_OSD.tlog/ArduCAM_OSD.lastbuildstate
+ArduCAM_OSD/Release/ArduCAM_OSD.tlog/unsuccessfulbuild
+ArduCAM_OSD/Release/board.buildinfo
+*.pdb
+ArduCAM_OSD/__vm/.ArduCAM_OSD.vsarduino.h

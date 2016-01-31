@@ -107,8 +107,6 @@ void setFdataVars(){
     takeofftime = 1;
     tdistance = 0;
     FTime = (millis()/1000);
-    start_battery_reading = osd_battery_remaining_A;
-    last_battery_reading = osd_battery_remaining_A;
   }
 
   //Check if is moving (osd_groundspeed > 1Km/h or osd_climb within ]-10, 10[ m/m
@@ -122,20 +120,11 @@ void setFdataVars(){
     landed_at_time = millis();
   }
 
-  if (osd_groundspeed > 1.0) tdistance += (osd_groundspeed * (millis() - dt) / 1000.0);
-  mah_used += (osd_curr_A * 10.0 * (millis() - dt) / 3600000.0);
-  //tdistance += (millis() - dt) / 1000.0 * osd_groundspeed;
-  //mah_used += (millis() - dt) / 3600000.0 * osd_curr_A * 10.0;
   dt = millis();
 
   if (takeofftime == 1)
   {
     start_Time = (millis()/1000) - FTime;
-    if (osd_home_distance > max_home_distance) max_home_distance = osd_home_distance;
-    if (osd_airspeed > max_osd_airspeed) max_osd_airspeed = osd_airspeed;
-    if (osd_groundspeed > max_osd_groundspeed) max_osd_groundspeed = osd_groundspeed;
-    if (osd_alt_to_home > max_osd_home_alt) max_osd_home_alt = osd_alt_to_home;
-    if (osd_windspeed > max_osd_windspeed) max_osd_windspeed = osd_windspeed;
   }
 }
 

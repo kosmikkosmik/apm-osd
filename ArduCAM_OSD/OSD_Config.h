@@ -118,9 +118,6 @@
 #define panRSSI_y_ADDR 96  
 
 // Third set of 8 panels
-#define panCur_A_en_ADDR 98 
-#define panCur_A_x_ADDR 100 
-#define panCur_A_y_ADDR 102 
 #define panCurB_en_ADDR 104 //(!Not implemented)
 #define panCurB_x_ADDR 106 //
 #define panCurB_y_ADDR 108 //
@@ -197,7 +194,6 @@
 #define RADIO_ON_ADDR 904
 #define ch_toggle_ADDR 906
 #define OSD_RSSI_RAW_ADDR 908
-#define switch_mode_ADDR 910
 #define PAL_NTSC_ADDR 912
 
 #define OSD_BATT_WARN_ADDR 914
