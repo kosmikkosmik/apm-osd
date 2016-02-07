@@ -57,9 +57,11 @@ protected:
      int            m_retryCount;
 
      void requestMissingParameters();
+     void setParameter(ParameterId id, float value);
 public:
 	void init();
 
+    void test();
     void requestData(uint8_t system, uint8_t component);
     void handleMessage(const mavlink_message_t* pMsg);
 

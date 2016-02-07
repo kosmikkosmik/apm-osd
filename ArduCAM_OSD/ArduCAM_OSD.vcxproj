@@ -108,6 +108,7 @@
     <ClInclude Include="OSD_Vars.h">
       <FileType>CppCode</FileType>
     </ClInclude>
+    <ClInclude Include="ParameterManager.h" />
     <ClInclude Include="Spi.h">
       <FileType>CppCode</FileType>
     </ClInclude>
@@ -117,6 +118,7 @@
     <ClCompile Include="ArduCam_Max7456.cpp" />
     <ClCompile Include="Battery.cpp" />
     <ClCompile Include="DistanceAlert.cpp" />
+    <ClCompile Include="ParameterManager.cpp" />
     <ClCompile Include="Spi.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

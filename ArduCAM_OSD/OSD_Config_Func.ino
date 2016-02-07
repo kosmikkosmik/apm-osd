@@ -38,7 +38,8 @@ void InitializeOSD() {
 }
 
 
-int checkPAL(int line){
+int checkPAL(int line)
+{
     if(line >= osd.getCenter() && osd.getMode() == 0){
         line -= 3;//Cutting lines offset after center if NTSC
     }

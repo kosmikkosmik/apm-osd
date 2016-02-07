@@ -147,37 +147,17 @@ void setup()
 } // END of setup();
 
 
-
-/* ***********************************************/
-/* ***************** MAIN LOOP *******************/
-
-// Mother of all happenings, The loop()
-// As simple as possible.
 void loop() 
 {
-  /*  if(enable_mav_request == 1){//Request rate control
-        //osd.clear();
-        //osd.setPanel(3,10);
-        //osd.openPanel();
-        //osd.printf_P(PSTR("Requesting DataStreams...")); 
-        //osd.closePanel();
-        //for(int n = 0; n < 3; n++){
-        //    request_mavlink_rates();//Three times to certify it will be readed
-        //    delay(50);
-        //}
-        enable_mav_request = 0;
-        //delay(2000);
-        osd.clear();
-        waitingMAVBeats = 0;
-        lastMAVBeat = millis();//Preventing error from delay sensing
-    }*/
+    // debug
+    //read_mavlink();
+    
+    DistanceAlert.test();
+    ParameterManager.test();
 
-    read_mavlink();
     mavlinkTimer.Run();
 }
 
-/* *********************************************** */
-/* ******** functions used in main loop() ******** */
 void OnMavlinkTimer()
 {
     setHeadingPatern();  // generate the heading patern
@@ -192,7 +172,8 @@ void OnMavlinkTimer()
 }
 
 
-void unplugSlaves(){
+void unplugSlaves()
+{
     //Unplug list of SPI
 #ifdef ArduCAM328
     digitalWrite(10,  HIGH); // unplug USB HOST: ArduCam Only

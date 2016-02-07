@@ -59,6 +59,24 @@ void DistanceAlertClass::handleMessage(const mavlink_message_t* pMsg)
     }
 }
 
+void DistanceAlertClass::test()
+{
+    // home
+    m_homeAltitude = 0; // 0m
+    m_homeLattitude = 59.0 + 57.0/60 + 11.44/3600; //  59°57'11.44"N
+    m_homeLongtitude = 30.0 + 18.0/60 + 51.69/3600; //  30°18'51.69"E
+    m_hasHomePosition = true;
+
+    // battery
+    m_pBattery->SetBatteryPercentage(100);
+    m_pBattery->SetVoltage(12.4);
+
+    // current location
+    m_altitude = 100; // 100m
+    m_lattitude = 59.0 + 57.0/60 + 37.56/3600; //  59°57'37.56"N
+    m_longtitude = 30.0 + 18.0/60 + 47.24/3600; //  30°18'47.24"E
+}
+
 void DistanceAlertClass::recalculate()
 {
     if (!m_hasHomePosition)
