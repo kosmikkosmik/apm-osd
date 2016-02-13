@@ -30,6 +30,7 @@ class DistanceAlertClass
     float m_altitude;
 
     float m_horizontalDistance;
+    uint16_t m_directionToHome;
 
     uint8_t m_system;
     uint8_t m_component;
@@ -39,15 +40,15 @@ class DistanceAlertClass
  public:
 	void init(BatteryClass* pBattery);
 
-    void test();
     void requestData(uint8_t system, uint8_t component);
     void handleMessage(const mavlink_message_t* pMsg);
 
     bool hasHomePosition() const { return m_hasHomePosition; }
     float getDistanceToHome() const { return m_horizontalDistance; }
+    uint16_t getDirectionToHome() const { return m_directionToHome; }
     float getAltitudeToHome() const { return m_altitude - m_homeAltitude; }
 
-    uint16_t getMaxFlightTime() const;
+    uint16_t getMaxFlightTimeInSeconds() const;
 
 private:
     void recalculate();

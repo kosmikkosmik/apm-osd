@@ -18,6 +18,7 @@ class BatteryClass
 protected:
     int8_t    m_batteryPercentage;
     uint16_t  m_dischargeRate;
+    uint8_t   m_reserveCapacityPercentage;
     float     m_voltage;
     ParameterManagerClass*  m_pParameterManager;
 
@@ -31,10 +32,11 @@ public:
     uint16_t GetFailsafeCapacity() const;
     uint16_t GetRemainingCapacity() const;
 
-    unsigned long GetRemainingTime() const;
+    uint16_t GetRemainingTimeInSeconds() const;
     float GetVoltage() const { return m_voltage; }
     uint16_t GetBatteryPercentage() const { return m_batteryPercentage; }
     uint16_t GetDischargeRate() const { return m_dischargeRate; }
+    uint8_t GetReserveCapacityPercentage() const { return m_reserveCapacityPercentage; }
 };
 
 extern BatteryClass Battery;

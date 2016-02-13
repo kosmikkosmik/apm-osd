@@ -17,6 +17,8 @@ void DistanceAlertClass::init(BatteryClass* pBattery)
     m_longtitude = 0;
     m_lattitude = 0;
     m_altitude = 0;
+
+    m_directionToHome = 0;
 }
 
 void DistanceAlertClass::requestData(uint8_t system, uint8_t component)
@@ -57,24 +59,8 @@ void DistanceAlertClass::handleMessage(const mavlink_message_t* pMsg)
         break;
 
     }
-}
 
-void DistanceAlertClass::test()
-{
-    // home
-    m_homeAltitude = 0; // 0m
-    m_homeLattitude = 59.0 + 57.0/60 + 11.44/3600; //  59°57'11.44"N
-    m_homeLongtitude = 30.0 + 18.0/60 + 51.69/3600; //  30°18'51.69"E
-    m_hasHomePosition = true;
-
-    // battery
-    m_pBattery->SetBatteryPercentage(100);
-    m_pBattery->SetVoltage(12.4);
-
-    // current location
-    m_altitude = 100; // 100m
-    m_lattitude = 59.0 + 57.0/60 + 37.56/3600; //  59°57'37.56"N
-    m_longtitude = 30.0 + 18.0/60 + 47.24/3600; //  30°18'47.24"E
+    recalculate();
 }
 
 void DistanceAlertClass::recalculate()
@@ -84,22 +70,45 @@ void DistanceAlertClass::recalculate()
         return;
     }
 
-    m_horizontalDistance = getDistance(m_homeLattitude, m_homeLattitude, m_lattitude, m_longtitude);
+    m_horizontalDistance = getDistance(m_homeLattitude, m_homeLongtitude, m_lattitude, m_longtitude);
 
+    // shrinking factor for longitude going to poles direction
+    double rads = fabs(m_homeLattitude) * 0.0174532925;
+    double scaleLongUp = 1.0f / cos(rads);
+    double dstlon = (m_homeLongtitude - m_longtitude); //OffSet_X
+    double dstlat = (m_homeLattitude - m_lattitude) * scaleLongUp; //OffSet Y
+    double bearing = 90 + (atan2(dstlat, -dstlon) * 57.295775); //absolut home direction
+    if (bearing < 0)
+    {
+        bearing += 360;//normalization
+    }
+
+    bearing = bearing - 180;//absolut return direction
+    if (bearing < 0)
+    {
+        bearing += 360;//normalization
+    }
+
+    m_directionToHome = (uint16_t)round(bearing);
 }
 
-uint16_t DistanceAlertClass::getMaxFlightTime() const
+uint16_t DistanceAlertClass::getMaxFlightTimeInSeconds() const
 {
     if (!m_hasHomePosition)
+    {
+        return m_pBattery->GetRemainingTimeInSeconds();
+    }
+
+    float horizontalReturnInSec = m_horizontalDistance / (ParameterManager.getParameter(ParameterManagerClass::WPNAV_SPEED) / 100);
+    float verticalReturnInSec = fabs(getAltitudeToHome()) / (ParameterManager.getParameter(ParameterManagerClass::WPNAV_SPEED_DN) / 100);
+    uint16_t returnTimeInSec = (uint16_t)(horizontalReturnInSec + verticalReturnInSec); 
+
+    if (m_pBattery->GetRemainingTimeInSeconds() <= returnTimeInSec)
     {
         return 0;
     }
 
-    float horizontalReturnInSec = m_horizontalDistance / ParameterManager.getParameter(ParameterManagerClass::WPNAV_SPEED) / 100;
-    float verticalReturnInSec = getAltitudeToHome() / ParameterManager.getParameter(ParameterManagerClass::WPNAV_SPEED_DN) / 100;
-    float returnTime = horizontalReturnInSec + verticalReturnInSec;
-
-    return m_pBattery->GetRemainingTime() - returnTime;
+    return m_pBattery->GetRemainingTimeInSeconds() - returnTimeInSec;
 }
 
 #define d2r (M_PI / 180.0)
@@ -110,7 +119,7 @@ float DistanceAlertClass::getDistance(float lat1, float long1, float lat2, float
     double dlat = (lat2 - lat1) * d2r;
     double a = pow(sin(dlat / 2.0), 2) + cos(lat1*d2r) * cos(lat2*d2r) * pow(sin(dlong / 2.0), 2);
     double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    float d = 6367 * c;
+    float d = 6367 * c * 1000; // in meters
     if (d >= 0)
     {
         return d;

@@ -1,0 +1,11 @@
+When not armed:
+* BATTERY
+* CAPACITY: last, settable
+* Failsafe %: settable
+* apply changes
+* revert
+
+when not armed:
+* right stick: move in menus
+* 
+

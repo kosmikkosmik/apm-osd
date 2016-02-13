@@ -43,6 +43,10 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 #include "ParameterManager.h"
 #include "Battery.h"
 #include "DistanceAlert.h"
+#include "Aircraft.h"
+#include "Test.h"
+#include "MainPanel.h"
+#include "GUI.h"
 #define PROGMEM __attribute__(( section(".progmem.data") )) 
 
 #undef PSTR 
@@ -56,6 +60,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 //#define membug 
 //#define FORCEINIT  // You should never use this unless you know what you are doing 
 
+
+#include "Aircraft.h"
 
 // AVR Includes
 #include <FastSerial.h>
@@ -82,7 +88,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 #include "OSD_Config.h"
 #include "ArduCam_Max7456.h"
 #include "OSD_Vars.h"
-#include "OSD_Func.h"
+
 
 /* *************************************************/
 /* ***************** DEFINITIONS *******************/
@@ -97,9 +103,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>
 // Objects and Serial definitions
 FastSerialPort0(Serial);
 OSD osd; //OSD object 
-
+Aircraft aircraft;
+GUI gui(osd, aircraft);
 SimpleTimer  mavlinkTimer;
 
+static bool s_wasConnected = false;
 
 /* **********************************************/
 /* ***************** SETUP() *******************/
@@ -118,12 +126,8 @@ void setup()
     // Prepare OSD for displaying 
     unplugSlaves();
     osd.init();
-    ParameterManager.init();
-    Battery.init(&ParameterManager);
-    DistanceAlert.init(&Battery);
+    aircraft.init();
 
-    // Start 
-    startPanels();
     delay(500);
 
 
@@ -149,25 +153,44 @@ void setup()
 
 void loop() 
 {
-    // debug
-    //read_mavlink();
+    read_mavlink();
     
-    DistanceAlert.test();
-    ParameterManager.test();
+//    Test test(aircraft, gui);
+//    test.test();
 
     mavlinkTimer.Run();
 }
 
+void setFdataVars()
+{
+
+    if (haltset == 1 && takeofftime == 0 && aircraft.getThrottle() > 15)
+    {
+        takeofftime = 1;
+        FTime = (millis() / 1000);
+    }
+
+    //Check if is moving (osd_groundspeed > 1Km/h or osd_climb within ]-10, 10[ m/m
+    //if((osd_groundspeed > 0.28) || (osd_climb < -0.17) || (osd_climb > 0.17)){
+    if (aircraft.getThrottle() > 15){
+        not_moving_since = millis();
+        landed_at_time = 4294967295; //Airborn
+    }
+    //If it is stoped for more than 10 seconds, declare a landing
+    else if (((millis() - not_moving_since) > 10000) && (landed_at_time == 4294967295) && (takeofftime == 1)){
+        landed_at_time = millis();
+    }
+
+    if (takeofftime == 1)
+    {
+        start_Time = (millis() / 1000) - FTime;
+    }
+}
+
 void OnMavlinkTimer()
 {
-    setHeadingPatern();  // generate the heading patern
-
-    //osd_battery_pic_A = setBatteryPic(osd_battery_remaining_A);     // battery A remmaning picture
-    //osd_battery_pic_B = setBatteryPic(osd_battery_remaining_B);     // battery B remmaning picture
-
-    setHomeVars(osd);   // calculate and set Distance from home and Direction to home
-    
-    writePanels();       // writing enabled panels (check OSD_Panels Tab)    
+    gui.refresh();
+//    writePanels();       // writing enabled panels (check OSD_Panels Tab)    
     setFdataVars();
 }
 

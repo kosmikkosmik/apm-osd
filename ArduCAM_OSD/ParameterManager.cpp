@@ -55,18 +55,6 @@ void ParameterManagerClass::requestData(uint8_t system, uint8_t component)
     requestMissingParameters();
 }
 
-void ParameterManagerClass::test()
-{
-    setParameter(WPNAV_SPEED, 1000);
-    setParameter(WPNAV_SPEED_DN, 150);
-    setParameter(WPNAV_SPEED_UP, 250);
-    setParameter(RTL_ALT, 100);
-    setParameter(RTL_ALT_FINAL, 0);
-    setParameter(LAND_SPEED, 50);
-    setParameter(BATT_CAPACITY, 5000);
-    setParameter(FS_BATT_MAH, 1000);
-}
-
 void ParameterManagerClass::setParameter(ParameterManagerClass::ParameterId id, float value)
 {
     m_parameters[id].m_value = value;
