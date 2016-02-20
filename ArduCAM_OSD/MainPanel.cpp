@@ -4,92 +4,98 @@
 #include "GUI.h"
 
 // Layout
-const int TOP_ROW = 0;
+const int TOP_ROW = 1;
 const int LEFT_COLUMN = 1;
-const int BOTTOM_ROW = 12;
-const int RIGHT_COLUMN = 25;
+const int RIGHT_COLUMN = 29;
 const int GPS_COLUMN = 26;
 const int BATTERY_COLUMN = 1;
 const int TIME_COLUMN = 12;
-const int MIDDLE_ROW = 5;
 const int ARROW_COLUMN = 14;
-const int WARNING_ROW = 4;
+const int WARNING_ROW = 8;
 
 extern GUI gui;
 
 MainPanel::MainPanel(OSD& osd, const Aircraft& aircraft):
 m_osd(osd),
-m_aircraft(aircraft)
+m_aircraft(aircraft),
+m_lastState(MAV_STATE_UNINIT),
+m_lastStateTime(0),
+m_lastArmed(false)
 {
 }
 
 void MainPanel::write()
 {
+    int bottomRow = m_osd.getBottomRow();
+
+    panBatteryVoltage(LEFT_COLUMN, TOP_ROW);
+    panRemainingTime(LEFT_COLUMN + 7, TOP_ROW);
+    panHomeDis(LEFT_COLUMN + 14, TOP_ROW);
+    panAlt(LEFT_COLUMN + 22, TOP_ROW);
+
+    panEKF(6, TOP_ROW + 4);
+    panGPSStatus(20, TOP_ROW + 4);
+    panStatus(11, TOP_ROW + 4);
+
     panWarn(LEFT_COLUMN, WARNING_ROW);
-    panFlightMode(GPS_COLUMN - 5, TOP_ROW);
-    panStatus(GPS_COLUMN - 5, TOP_ROW + 1);
 
-    panGPSStatus(GPS_COLUMN, TOP_ROW);
-    panEKF(GPS_COLUMN, TOP_ROW + 1);
+    panFlightMode(RIGHT_COLUMN - 5, bottomRow);
 
-    //        panTime(TIME_COLUMN, TOP_ROW);
-    panRemainingTime(TIME_COLUMN, TOP_ROW);
-
-    panBatteryPercent(BATTERY_COLUMN, TOP_ROW);
-    panBatteryVoltage(BATTERY_COLUMN, TOP_ROW + 1);
-
-    panAlt(LEFT_COLUMN + 6, BOTTOM_ROW);
-    panHomeDis(LEFT_COLUMN, BOTTOM_ROW);
+    panBatteryPercent(BATTERY_COLUMN, bottomRow);
 
     if (DistanceAlert.hasHomePosition())
     {
-        panHomeDir(ARROW_COLUMN, TOP_ROW + 2);
+        panHomeDir(ARROW_COLUMN, bottomRow);
     }
 
-    panVelocity(RIGHT_COLUMN - 6, BOTTOM_ROW);
-    panClimb(RIGHT_COLUMN, BOTTOM_ROW);
+//    panVelocity(RIGHT_COLUMN - 6, bottomRow);
 }
 
-void MainPanel::panAlt(int first_col, int first_line) const
+void MainPanel::panAlt(int col, int row) const
 {
+    m_osd.setPanel(col, row);
+    m_osd.openPanel();
     if (m_aircraft.getDistanceAlert().hasHomePosition())
     {
-        m_osd.setPanel(first_col, first_line);
-        m_osd.openPanel();
-        m_osd.printf("h %.0f ", round(DistanceAlert.getAltitudeToHome()));
-        m_osd.closePanel();
-    }
-}
-
-
-void MainPanel::panClimb(int first_col, int first_line) const
-{
-    m_osd.setPanel(first_col, first_line);
-    m_osd.openPanel();
-
-    float climbRate = m_aircraft.getClimbRate();
-
-    char climbChar;
-    if (climbRate > 0)
-    {
-        climbChar = 191;
-    }
-    else if (climbRate < 0)
-    {
-        climbChar = 207;
+        m_osd.printf("a:%-4.0f ", round(DistanceAlert.getAltitudeToHome()));
     }
     else
     {
-        climbChar = 32;
+        m_osd.print_P(PSTR("a:----"));
     }
+    m_osd.closePanel();
 
+    const char CLIMB_UP = 191;
+    const char CLIMB_DOWN = 207;
+    const char CLIMB_NO = 32;
+
+    // climb rate up
+    float climbRate = m_aircraft.getClimbRate();
+
+    m_osd.setPanel(col, row - 1);
+    m_osd.openPanel();
+    if (climbRate > 0)
+    {
+        m_osd.print(CLIMB_UP);
+    }
+    else
+    {
+        m_osd.print(CLIMB_NO);
+    }
+    m_osd.closePanel();
+
+    m_osd.setPanel(col, row + 1);
+    m_osd.openPanel();
     if (climbRate < 0)
     {
-        climbRate = -climbRate;
+        m_osd.print(CLIMB_DOWN);
     }
-
-    m_osd.printf("c%c%2.0f", climbChar, climbRate);
+    else
+    {
+        m_osd.print(CLIMB_NO);
+    }
     m_osd.closePanel();
+
 }
 
 void MainPanel::panVelocity(int first_col, int first_line) const
@@ -136,13 +142,21 @@ void MainPanel::panRemainingTime(int first_col, int first_line) const
 
 void MainPanel::panHomeDis(int first_col, int first_line) const
 {
+    m_osd.setPanel(first_col, first_line);
+    m_osd.openPanel();
+
+//    const char HOME_CHAR = 31;
+    const char HOME_CHAR = 'd';
+
     if (m_aircraft.getDistanceAlert().hasHomePosition())
     {
-        m_osd.setPanel(first_col, first_line);
-        m_osd.openPanel();
-        m_osd.printf("d %.0f ", DistanceAlert.getDistanceToHome());
-        m_osd.closePanel();
+        m_osd.printf("%c:%-4.0f  ", HOME_CHAR, DistanceAlert.getDistanceToHome());
     }
+    else
+    {
+        m_osd.printf("%c:----", HOME_CHAR);
+    }
+    m_osd.closePanel();
 }
 
 
@@ -172,9 +186,16 @@ void MainPanel::panBatteryVoltage(int first_col, int first_line) const
         batteryChar = 184;
     }
 
+    float vPerCell = m_aircraft.getBattery().GetVoltage();
+    uint8_t cellCount = m_aircraft.getBattery().GetCellCount();
+    if (cellCount != 0)
+    {
+        vPerCell /= cellCount;
+    }
+
     m_osd.setPanel(first_col, first_line);
     m_osd.openPanel();
-    m_osd.printf("%c %.1f", batteryChar, Battery.GetVoltage());
+    m_osd.printf("%c%.1f", batteryChar, round(vPerCell*10)/10);
     m_osd.closePanel();
 }
 
@@ -183,35 +204,34 @@ void MainPanel::panBatteryPercent(int first_col, int first_line) const
     m_osd.setPanel(first_col, first_line);
     m_osd.openPanel();
 
-    m_osd.printf_P(PSTR("%% %i "), Battery.GetBatteryPercentage());
+    m_osd.printf_P(PSTR("%i%% "), Battery.GetBatteryPercentage());
     m_osd.closePanel();
 }
 
 
 void MainPanel::panGPSStatus(int first_col, int first_line) const
 {
-    m_osd.setPanel(first_col, first_line);
-    m_osd.openPanel();
+    bool gps3dlock = (m_aircraft.getFixType() >= 3);
+    uint16_t hdop = m_aircraft.getHdop();
+    uint16_t vdop = m_aircraft.getVdop();
 
-    const char* gps_str;
-    if (m_aircraft.getFixType() == 3)
+    bool gpsOK = gps3dlock && (hdop < 250) && (vdop < 250);
+
+    char* gpsStr;
+
+    if (!gpsOK && !gui.shouldEraseText())
     {
-        gps_str = " 3d";
+        gpsStr = "gps";
     }
     else
     {
-        if (gui.shouldEraseText())
-        {
-            gps_str = "   ";
-        }
-        else
-        {
-            gps_str = "gps";
-        }
+        gpsStr = "   ";
     }
 
-    m_osd.printf("%s", gps_str);
 
+    m_osd.setPanel(first_col, first_line);
+    m_osd.openPanel();
+    m_osd.print(gpsStr);
     m_osd.closePanel();
 }
 
@@ -238,7 +258,7 @@ void MainPanel::panEKF(int first_col, int first_line) const
     bool should_flash = (m_aircraft.getEkfStatus() == Aircraft::EKFStatus_BAD);
     bool should_warn = (m_aircraft.getEkfStatus() == Aircraft::EKFStatus_WARN);
 
-    if (should_warn || (should_flash && gui.shouldEraseText()))
+    if (should_warn || (should_flash && !gui.shouldEraseText()))
     {
         m_osd.print("ekf");
     }
@@ -250,70 +270,98 @@ void MainPanel::panEKF(int first_col, int first_line) const
     m_osd.closePanel();
 }
 
-void MainPanel::panStatus(int first_col, int first_line) const
+void MainPanel::panStatus(int first_col, int first_line)
 {
-    const char* str = "";
+    const char* str = "         ";
+    const char* fsReason = NULL;
+
     bool shouldFlash = false;
+    bool shouldErase = false;
+
+    if ((m_lastState != m_aircraft.getState()) || (m_lastArmed != m_aircraft.armed()))
+    {
+        m_lastState = m_aircraft.getState();
+        m_lastArmed = m_aircraft.armed();
+        m_lastStateTime = millis();
+    }
+    else
+    {
+        shouldErase = (millis() - m_lastStateTime) > 2000;
+    }
+
+
 
     switch (m_aircraft.getState())
     {
-        /*        case MAV_STATE_ACTIVE:
-        str = "active";
-        break;
-
-        case MAV_STATE_BOOT:
-        str = "powering up";
-        break;
-
-        case MAV_STATE_CALIBRATING:
-        str = "calibrating";
-        break; */
-
-    case MAV_STATE_CRITICAL:
-        str = "fs";
-        shouldFlash = true;
-        break;
-
-    case MAV_STATE_EMERGENCY:
-        str = "!!";
-        shouldFlash = true;
-        break;
-
-        /*        case MAV_STATE_POWEROFF:
-        str = "off"; */
-        break;
-
+    case MAV_STATE_ACTIVE:
     case MAV_STATE_STANDBY:
-        str = "  ";
-        break;
-
-        /*        case MAV_STATE_UNINIT:
-        str = " ";
-        break; */
-
-    default:
         if (m_aircraft.armed())
         {
-            str = "  ";
+            str = "  armed  ";
         }
         else
         {
-            str = "--";
+            str = "disarmed ";
+            shouldErase = false;
         }
+        break;
+
+    case MAV_STATE_BOOT:
+        str = "powering";
+        break;
+
+    case MAV_STATE_CALIBRATING:
+        str = "calibrate";
+        break;
+
+    case MAV_STATE_CRITICAL:
+        str = "failsafe";
+        shouldFlash = true;
+        if (!(m_aircraft.getSensorsHealth() & MAV_SYS_STATUS_SENSOR_RC_RECEIVER))
+        {
+            fsReason = "radio";
+        }
+        break;
+
+    case MAV_STATE_EMERGENCY:
+        str = "emergency";
+        shouldFlash = true;
+        break;
+
+    case MAV_STATE_POWEROFF:
+        str = "  off  "; 
+        break;
+
+    default:
         break;
     }
 
     m_osd.setPanel(first_col, first_line);
     m_osd.openPanel();
-    m_osd.print(str);
+    if (shouldFlash && gui.shouldEraseText() || (shouldErase && !shouldFlash))
+    {
+        m_osd.print_P(PSTR("        "));
+    }
+    else
+    {
+        m_osd.print(str);
+    }
     m_osd.closePanel();
+
+    if (!fsReason || gui.shouldEraseText())
+    {
+        gui.displayCentered(first_line + 1, MAX_PANEL_WIDTH, " ");
+    }
+    else
+    {
+        gui.displayCentered(first_line + 1, MAX_PANEL_WIDTH, fsReason);
+    }
 }
 
 
 void MainPanel::panFlightMode(int first_col, int first_line) const
 {
     const char* mode_str = "";
-    boolean should_flash = false;
 
     switch (m_aircraft.getCustomMode())
     {
@@ -355,7 +403,6 @@ void MainPanel::panFlightMode(int first_col, int first_line) const
 
     case Aircraft::CustomMode_Land:
         mode_str = "land";
-        should_flash = true;
         break;
 
     case Aircraft::CustomMode_Loiter:
@@ -368,7 +415,6 @@ void MainPanel::panFlightMode(int first_col, int first_line) const
 
     case Aircraft::CustomMode_RTL:
         mode_str = "rtl ";
-        should_flash = true;
         break;
 
     case Aircraft::CustomMode_Sport:
@@ -381,12 +427,6 @@ void MainPanel::panFlightMode(int first_col, int first_line) const
 
     default:
         mode_str = "????";
-        should_flash = true;
-    }
-
-    if (should_flash && (gui.shouldEraseText()))
-    {
-        mode_str = "    ";
     }
 
     m_osd.setPanel(first_col, first_line);

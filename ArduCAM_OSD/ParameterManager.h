@@ -23,7 +23,7 @@
                                 bool isReceived_##p() const { return m_paramReceived_##p; }
 
 
-const int PARAMETER_COUNT = 8;
+const int PARAMETER_COUNT = 9;
 
 class ParameterManagerClass
 {
@@ -37,7 +37,8 @@ public:
         RTL_ALT_FINAL,
         LAND_SPEED,
         BATT_CAPACITY,
-        FS_BATT_MAH
+        FS_BATT_MAH,
+        FS_BATT_VOLTAGE
     };
 
 protected:

@@ -17,10 +17,20 @@ class BatteryClass
 {
 protected:
     int8_t    m_batteryPercentage;
-    uint16_t  m_dischargeRate;
+    float     m_dischargeRate;
     uint8_t   m_reserveCapacityPercentage;
     float     m_voltage;
+    uint8_t   m_cellCount;
+
     ParameterManagerClass*  m_pParameterManager;
+
+    // Battery estimation
+    float     m_estimatedDischargeRate;
+    unsigned long   m_measuredTime;
+    uint16_t        m_measuredCapacity;
+
+    unsigned long   m_prevMeasuredTime;
+    uint16_t        m_prevMeasuredCapacity;
 
 public:
     void init(ParameterManagerClass* pParameterManager);
@@ -28,14 +38,20 @@ public:
     void SetBatteryPercentage(int8_t percentage);
     void SetDischargeRate(float rate);
     void SetVoltage(float voltage);
+    void SetFailsafeVoltage(float voltage);
+
     uint16_t GetTotalCapacity() const;
     uint16_t GetFailsafeCapacity() const;
     uint16_t GetRemainingCapacity() const;
+    uint8_t GetCellCount() const { return m_cellCount; }
+
+    void SetUsedCapacity(uint16_t capacityUsed);
+    void UpdateMeasurements();
 
     uint16_t GetRemainingTimeInSeconds() const;
     float GetVoltage() const { return m_voltage; }
     uint16_t GetBatteryPercentage() const { return m_batteryPercentage; }
-    uint16_t GetDischargeRate() const { return m_dischargeRate; }
+    float GetDischargeRate() const { return m_dischargeRate; }
     uint8_t GetReserveCapacityPercentage() const { return m_reserveCapacityPercentage; }
 };
 

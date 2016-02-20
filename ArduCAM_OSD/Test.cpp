@@ -1,3 +1,5 @@
+#ifdef DEBUG
+
 #include "Test.h"
 
 const uint8_t SYSTEM_ID = 1;
@@ -11,7 +13,7 @@ m_gui(gui)
 
 void Test::test()
 {
-    sendHearbeat(false);
+//    sendHearbeat(false, MAV_STATE_STANDBY);
 
     // Base parameters
     sendParameter("WPNAV_SPEED", 500);
@@ -22,19 +24,21 @@ void Test::test()
     sendParameter("LAND_SPEED", 50);
     sendParameter("BATT_CAPACITY", 5000);
     sendParameter("FS_BATT_MAH", 1000);
+    sendParameter("FS_BATT_VOLTAGE", 13);
 
     // battery
     sendSystemStatus(100, 12.4);
 
+
     sendHomePosition(
         getRadians(59, 57, 11.44), // 59°57'11.44"N
         getRadians(30, 18, 51.69), // 30°18'51.69"E
-        1000);
+        0);
     
     sendCurrentPosition(
         getRadians(59, 57, 11.44), // 59°57'11.44"N
         getRadians(30, 18, 51.69), // 30°18'51.69"E
-        0); 
+        200); 
 
     //sendHearbeat(true);
 
@@ -47,10 +51,18 @@ void Test::test()
         10,  // ground speed 10 m/s
         180,   // heading south (180 deg)
         70,  // 70% throttle
-        -2);  // climb rate 2 m/s down
+        2);  // climb rate 2 m/s down
 
     // Switch to settings
+
+    sendEkfStatusReport(0.9);
+//    sendHearbeat(true, MAV_STATE_CRITICAL);
+    sendStatusText(MAV_SEVERITY_CRITICAL, "Some very very very long status text.");
+    sendStatusText(MAV_SEVERITY_CRITICAL, "TEST");
+
     sendChannels(1100, 1500);
+
+    sendHearbeat(true, MAV_STATE_ACTIVE);
 }
 
 void Test::testMessage(const mavlink_message_t& msg)
@@ -69,7 +81,7 @@ void Test::sendChannels(uint16_t channel1, uint16_t channel2)
     testMessage(buf);
 }
 
-void Test::sendHearbeat(bool armed)
+void Test::sendHearbeat(bool armed, MAV_STATE state)
 {
     mavlink_heartbeat_t hearbeat;
     hearbeat.autopilot = MAV_AUTOPILOT_ARDUPILOTMEGA;
@@ -81,7 +93,7 @@ void Test::sendHearbeat(bool armed)
 
     hearbeat.custom_mode = Aircraft::CustomMode_PositionHold;
     hearbeat.mavlink_version = 1;
-    hearbeat.system_status = 0;
+    hearbeat.system_status = state;
     hearbeat.type = MAV_TYPE_QUADROTOR;
 //    hearbeat.type = MAV_TYPE_GCS;
 
@@ -156,7 +168,34 @@ void Test::sendVfrHud(float groundSpeed, int16_t heading, int16_t throttle, floa
     testMessage(buf);
 }
 
+void Test::sendEkfStatusReport(float ekfVariance)
+{
+    mavlink_ekf_status_report_t msg;
+    msg.compass_variance = ekfVariance;
+    msg.pos_horiz_variance = ekfVariance;
+    msg.pos_vert_variance = ekfVariance;
+    msg.terrain_alt_variance = ekfVariance;
+    msg.velocity_variance = ekfVariance;
+
+    mavlink_message_t buf;
+    mavlink_msg_ekf_status_report_encode(SYSTEM_ID, COMPONENT_ID, &buf, &msg);
+    testMessage(buf);
+}
+
+void Test::sendStatusText(MAV_SEVERITY severity, const char* text)
+{
+    mavlink_statustext_t msg;
+    memcpy(msg.text, text, 50);
+    msg.severity = severity;
+
+    mavlink_message_t buf;
+    mavlink_msg_statustext_encode(SYSTEM_ID, COMPONENT_ID, &buf, &msg);
+    testMessage(buf);
+}
+
 float Test::getRadians(int deg, int min, float sec) const
 {
     return deg + (float)(min) / 60 + sec / 3600;
 }
+
+#endif // DEBUG

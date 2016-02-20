@@ -125,15 +125,16 @@ void GUI::refresh()
 
     if (!m_aircraft.connected())
     {
+        m_osd.setPanel(3, 8);
+        m_osd.openPanel();
+        m_osd.printf_P(PSTR("video mode: %s"), (m_osd.getMode() == OSD::Mode_PAL) ? "pal" : "ntsc");
+        m_osd.closePanel();
+
+
         m_osd.setPanel(3, 10);
         m_osd.openPanel();
         m_osd.printf_P(PSTR("waiting for heartbeat..."));
         m_osd.closePanel();
-        m_osd.setPanel(3, 11);
-        m_osd.openPanel();
-        m_osd.printf("type: %i", m_aircraft.getType());
-        m_osd.closePanel();
-
         return;
     }
 
@@ -166,26 +167,39 @@ bool GUI::shouldEraseText()
 }
 
 void GUI::displayCentered(int row, int width, const char* str)
-{
+{    
     if (width > MAX_PANEL_WIDTH)
     {
         width = MAX_PANEL_WIDTH;
     }
 
-    memset(m_formattingBuffer, 0x20, width);
-    m_formattingBuffer[width] = '\0';
-
     int len = strlen(str);
+    int remainder = 0;
     if (len > MAX_PANEL_WIDTH)
     {
+        remainder = len - MAX_PANEL_WIDTH;
         len = MAX_PANEL_WIDTH;
     }
 
     int offset = (width - len) / 2;
 
+    memset(m_formattingBuffer, 0x20, width);
+    m_formattingBuffer[width] = '\0';
     memcpy(m_formattingBuffer + offset, str, len);
 
     m_osd.setPanel((MAX_PANEL_WIDTH - width) / 2 + 1, row);
+    m_osd.openPanel();
+    m_osd.printf("%s", m_formattingBuffer);
+    m_osd.closePanel();
+
+    memset(m_formattingBuffer, 0x20, width);
+    m_formattingBuffer[width] = '\0';
+    if (remainder > 0)
+    {
+        memcpy(m_formattingBuffer, str + len, remainder);
+    }
+
+    m_osd.setPanel((MAX_PANEL_WIDTH - width) / 2 + 1, row + 1);
     m_osd.openPanel();
     m_osd.printf("%s", m_formattingBuffer);
     m_osd.closePanel();

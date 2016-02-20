@@ -60,6 +60,11 @@ void DistanceAlertClass::handleMessage(const mavlink_message_t* pMsg)
 
     }
 
+    if (ParameterManager.isInSync())
+    {
+        float fsVoltage = ParameterManager.getParameter(ParameterManagerClass::FS_BATT_VOLTAGE);
+        m_pBattery->SetFailsafeVoltage(fsVoltage);
+    }
     recalculate();
 }
 

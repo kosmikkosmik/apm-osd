@@ -93,6 +93,12 @@ void Aircraft::processMessage(const mavlink_message_t& msg)
     {
         memset(m_lastWarning, 0, WARNING_TEXT_TOTAL);
         mavlink_msg_statustext_get_text(&msg, m_lastWarning);
+        int length = strlen(m_lastWarning);
+        for (int i = 0; i < length; i++)
+        {
+            m_lastWarning[i] = tolower(m_lastWarning[i]);
+        }
+
         m_lastWarningTimestamp = millis();
     }
     break;
@@ -153,8 +159,7 @@ void Aircraft::requestMavlinkStreams()
 
 uint16_t Aircraft::getDirectionToHome() const
 {
-    return m_heading;
-/*    uint16_t dir = DistanceAlert.getDirectionToHome() - m_heading;
+    uint16_t dir = DistanceAlert.getDirectionToHome() - m_heading;
     if (dir < 0)
     {
         return dir + 360;
@@ -162,5 +167,5 @@ uint16_t Aircraft::getDirectionToHome() const
     else if (dir >= 360)
     {
         return dir - 360;
-    } */
+    }
 }

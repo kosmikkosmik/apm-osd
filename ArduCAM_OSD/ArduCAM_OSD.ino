@@ -107,11 +107,6 @@ Aircraft aircraft;
 GUI gui(osd, aircraft);
 SimpleTimer  mavlinkTimer;
 
-static bool s_wasConnected = false;
-
-/* **********************************************/
-/* ***************** SETUP() *******************/
-
 void setup() 
 {
 #ifdef ArduCAM328
@@ -129,7 +124,6 @@ void setup()
     aircraft.init();
 
     delay(500);
-
 
     // Just to easy up development things
 #ifdef FORCEINIT
@@ -153,10 +147,12 @@ void setup()
 
 void loop() 
 {
+#ifndef DEBUG
     read_mavlink();
-    
-//    Test test(aircraft, gui);
-//    test.test();
+#else   
+    Test test(aircraft, gui);
+    test.test();
+#endif
 
     mavlinkTimer.Run();
 }
@@ -189,6 +185,7 @@ void setFdataVars()
 
 void OnMavlinkTimer()
 {
+    Battery.UpdateMeasurements();
     gui.refresh();
 //    writePanels();       // writing enabled panels (check OSD_Panels Tab)    
     setFdataVars();

@@ -42,7 +42,7 @@ void writeDebugPanel()
 
     osd.setPanel(1, 6);
     osd.openPanel();
-    osd.printf_P(PSTR("dischange rate: %i   "), Battery.GetDischargeRate());
+    osd.printf_P(PSTR("dischange rate: %.1f   "), Battery.GetDischargeRate());
     osd.closePanel();
 
     osd.setPanel(1, 7);

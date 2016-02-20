@@ -77,6 +77,12 @@
 class OSD: public BetterStream
 {
   public:
+    enum Mode
+    {
+        Mode_PAL = 0,
+        Mode_NTSC = 1
+    };
+
     OSD(void);
     void init(void);
     void clear(void);
@@ -86,11 +92,12 @@ class OSD: public BetterStream
     void closePanel(void);
     void control(uint8_t ctrl);
     void detectMode(void);
-    void setMode(int mode);
+    void setMode(Mode mode);
     void setBrightness();
     void openSingle(uint8_t x, uint8_t y);
-    int getMode(void);
-    int getCenter(void);
+    Mode getMode(void) const;
+    int getCenter(void) const;
+    int getBottomRow() const;
     virtual int     available(void);
     virtual int     read(void);
     virtual int     peek(void);

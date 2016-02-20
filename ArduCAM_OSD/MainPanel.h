@@ -13,8 +13,7 @@ public:
     void write();
 
 private:
-    void panAlt(int first_col, int first_line) const;
-    void panClimb(int first_col, int first_line) const;
+    void panAlt(int col, int row) const;
     void panVelocity(int first_col, int first_line) const;
     void panWarn(int first_col, int first_line) const;
     void panThr(int first_col, int first_line) const;
@@ -25,13 +24,17 @@ private:
     void panGPSStatus(int first_col, int first_line) const;
     void panHomeDir(int first_col, int first_line) const;
     void panEKF(int first_col, int first_line) const;
-    void panStatus(int first_col, int first_line) const;
+    void panStatus(int first_col, int first_line);
     void panFlightMode(int first_col, int first_line) const;
     void showArrow(uint8_t rotate_arrow, uint8_t method) const;
 
 private:
     OSD&              m_osd;
     const Aircraft&   m_aircraft;
+
+    MAV_STATE         m_lastState;
+    bool              m_lastArmed;
+    unsigned long     m_lastStateTime;
 };
 
 #endif // __MainPanel_H__

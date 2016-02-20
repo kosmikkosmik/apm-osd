@@ -56,21 +56,29 @@ void OSD::detectMode()
   digitalWrite(MAX7456_SELECT,LOW);
   Spi.transfer(MAX7456_STAT_reg_read);//status register
   byte osdstat_r = Spi.transfer(0xff);
-  if ((B00000001 & osdstat_r) == 1){ //PAL
-    setMode(1);
+
+  if ((B00000001 & osdstat_r) == 1)
+  {
+    setMode(OSD::Mode_PAL);
   }
-  else if((B00000010 & osdstat_r) == 1){ //NTSC
-  setMode(0);
+  else if((B00000010 & osdstat_r) == 1)
+  { 
+    setMode(OSD::Mode_NTSC);
   }
+
   //If no signal was detected so it uses EEPROM config
-  else{
-    if (EEPROM.read(PAL_NTSC_ADDR) == 0){ //NTSC
-      setMode(0);
+  else
+  {
+    if (EEPROM.read(PAL_NTSC_ADDR) == 0)
+    { //NTSC
+      setMode(OSD::Mode_NTSC);
     }
-    else { //PAL
-      setMode(1);
+    else 
+    { //PAL
+      setMode(OSD::Mode_PAL);
     }
-    digitalWrite(MAX7456_SELECT,LOW);
+
+    digitalWrite(MAX7456_SELECT, LOW);
   } 
 }
 
@@ -101,14 +109,15 @@ void OSD::setBrightness()
 
 //------------------ Set Mode (PAL/NTSC) ------------------------------------
 
-void OSD::setMode(int themode)
+void OSD::setMode(Mode themode)
 {
-  switch(themode){
-    case 0:
+  switch(themode)
+  {
+    case Mode_NTSC:
       video_mode = MAX7456_MODE_MASK_NTCS;
       video_center = MAX7456_CENTER_NTSC;
       break;
-    case 1:
+    case Mode_PAL:
       video_mode = MAX7456_MODE_MASK_PAL;
       video_center = MAX7456_CENTER_PAL;
       break;
@@ -117,24 +126,21 @@ void OSD::setMode(int themode)
 
 //------------------ Get Mode (PAL 0/NTSC 1) --------------------------------
 
-int OSD::getMode()
+OSD::Mode OSD::getMode() const
 {
-  switch(video_mode){
-    case MAX7456_MODE_MASK_NTCS:
-      return 0;
-      break;
-    case MAX7456_MODE_MASK_PAL:
-      return 1;
-      break;
-  }
-  return 0;
+    return (video_mode == MAX7456_MODE_MASK_NTCS) ? Mode_NTSC : Mode_PAL;
 }
 
 //------------------ Get Center (PAL/NTSC) ----------------------------------
 
-int OSD::getCenter()
+int OSD::getCenter() const
 {
   return video_center; //first line for center panel
+}
+
+int OSD::getBottomRow() const
+{
+    return (getMode() == Mode_PAL) ? 14 : 12;
 }
 
 //------------------ plug ---------------------------------------------------
