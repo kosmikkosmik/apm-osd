@@ -6,6 +6,7 @@
 #include "ArduCam_Max7456.h"
 #include "MainPanel.h"
 #include "SettingsPanel.h"
+#include "CompassCalibrationPanel.h"
 
 const int MAX_PANEL_WIDTH = 28;
 
@@ -15,19 +16,18 @@ public:
     enum Panel
     {
         Panel_Main,
-        Panel_Settings
+        Panel_Settings,
+        Panel_CompassCalibration
     };
 
     enum Command
     {
         Command_None,
-        Command_Up,
-        Command_Down,
-        Command_Left,
-        Command_Right
+        Command_NextPanel,
+        Command_CompassCalibration
     };
 
-    GUI(OSD& osd, const Aircraft& aircraft);
+    GUI(OSD& osd, Aircraft& aircraft);
 
     void processMessage(const mavlink_message_t& msg);
     void refresh();
@@ -43,7 +43,7 @@ private:
 
 private:
     OSD&        m_osd;
-    const Aircraft&   m_aircraft;
+    Aircraft&   m_aircraft;
     char    m_formattingBuffer[MAX_PANEL_WIDTH + 1];
     Panel   m_currentPanel;
     bool    m_clearPanel;
@@ -53,6 +53,7 @@ private:
 
     MainPanel       m_mainPanel;
     SettingsPanel   m_settingsPanel;
+    CompassCalibrationPanel m_ccPanel;
 };
 
 #endif // __GUI_H__

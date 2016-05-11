@@ -35,6 +35,9 @@
     <ClInclude Include="MainPanel.h" />
     <ClInclude Include="Test.h" />
     <ClInclude Include="SettingsPanel.h" />
+    <ClInclude Include="CompassCalibrationPanel.h" />
+    <ClInclude Include="OSDPanel.h" />
+    <ClInclude Include="ValueFilter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Battery.cpp" />
@@ -51,6 +54,9 @@
     <ClCompile Include="MainPanel.cpp" />
     <ClCompile Include="Test.cpp" />
     <ClCompile Include="SettingsPanel.cpp" />
+    <ClCompile Include="CompassCalibrationPanel.cpp" />
+    <ClCompile Include="OSDPanel.cpp" />
+    <ClCompile Include="ValueFilter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Misc">

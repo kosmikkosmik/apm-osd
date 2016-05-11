@@ -23,6 +23,9 @@ private:
 
     float getRadians(int deg, int min, float sec) const;
     void testMessage(const mavlink_message_t& msg);
+
+    void updateUI();
+
 private:
     Aircraft&   m_aircraft;
     GUI&        m_gui;

@@ -67,6 +67,13 @@ public:
     uint8_t getSatellites() const { return m_satellites; }
     uint16_t getHdop() const { return m_hdop; }
     uint16_t getVdop() const { return m_vdop; }
+
+    void beginCompassCalibration();
+    void acceptCompassCalibration();
+    void cancelCompassCalibration();
+    MAG_CAL_STATUS getCompassCalibrationStatus() const { return m_magCalStatus; }
+    uint8_t getCompassCalibrationPercentage() const { return m_magCalPercentage; }
+
 private:
     void requestMavlinkStreams();
 
@@ -99,6 +106,9 @@ private:
     uint8_t     m_satellites;
     uint16_t    m_hdop;
     uint16_t    m_vdop;
+
+    MAG_CAL_STATUS  m_magCalStatus;
+    uint8_t         m_magCalPercentage;
 };
 
 #endif // __AIRCRAFT_H__

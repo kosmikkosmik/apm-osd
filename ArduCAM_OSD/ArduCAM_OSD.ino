@@ -157,38 +157,13 @@ void loop()
     mavlinkTimer.Run();
 }
 
-void setFdataVars()
-{
-
-    if (haltset == 1 && takeofftime == 0 && aircraft.getThrottle() > 15)
-    {
-        takeofftime = 1;
-        FTime = (millis() / 1000);
-    }
-
-    //Check if is moving (osd_groundspeed > 1Km/h or osd_climb within ]-10, 10[ m/m
-    //if((osd_groundspeed > 0.28) || (osd_climb < -0.17) || (osd_climb > 0.17)){
-    if (aircraft.getThrottle() > 15){
-        not_moving_since = millis();
-        landed_at_time = 4294967295; //Airborn
-    }
-    //If it is stoped for more than 10 seconds, declare a landing
-    else if (((millis() - not_moving_since) > 10000) && (landed_at_time == 4294967295) && (takeofftime == 1)){
-        landed_at_time = millis();
-    }
-
-    if (takeofftime == 1)
-    {
-        start_Time = (millis() / 1000) - FTime;
-    }
-}
-
 void OnMavlinkTimer()
 {
-    Battery.UpdateMeasurements();
+    if (ParameterManager.isInSync())
+    {
+        Battery.UpdateMeasurements();
+    }
     gui.refresh();
-//    writePanels();       // writing enabled panels (check OSD_Panels Tab)    
-    setFdataVars();
 }
 
 

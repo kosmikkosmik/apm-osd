@@ -155,10 +155,11 @@ void OSD::plug()
 void OSD::clear()
 {
   // clear the screen
+    
   digitalWrite(MAX7456_SELECT,LOW);
   Spi.transfer(MAX7456_DMM_reg);
   Spi.transfer(MAX7456_CLEAR_display);
-  digitalWrite(MAX7456_SELECT,HIGH);
+  digitalWrite(MAX7456_SELECT,HIGH); 
 }
 
 //------------------ set panel -----------------------------------------------

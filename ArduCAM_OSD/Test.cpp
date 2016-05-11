@@ -15,6 +15,39 @@ void Test::test()
 {
 //    sendHearbeat(false, MAV_STATE_STANDBY);
 
+    // battery
+    updateUI();
+
+    sendSystemStatus(100, 12.4);
+
+    updateUI();
+
+    sendHomePosition(
+        getRadians(59, 57, 11.44), // 59°57'11.44"N
+        getRadians(30, 18, 51.69), // 30°18'51.69"E
+        0);
+
+    updateUI();
+
+    sendCurrentPosition(
+        getRadians(59, 57, 11.44), // 59°57'11.44"N
+        getRadians(30, 18, 51.69), // 30°18'51.69"E
+        200);
+
+    updateUI();
+
+    sendVfrHud(
+        10,  // ground speed 10 m/s
+        180,   // heading south (180 deg)
+        70,  // 70% throttle
+        2);  // climb rate 2 m/s down
+
+    updateUI();
+
+    sendEkfStatusReport(0.9);
+
+    updateUI();
+
     // Base parameters
     sendParameter("WPNAV_SPEED", 500);
     sendParameter("WPNAV_SPEED_UP", 250);
@@ -26,19 +59,7 @@ void Test::test()
     sendParameter("FS_BATT_MAH", 1000);
     sendParameter("FS_BATT_VOLTAGE", 13);
 
-    // battery
-    sendSystemStatus(100, 12.4);
-
-
-    sendHomePosition(
-        getRadians(59, 57, 11.44), // 59°57'11.44"N
-        getRadians(30, 18, 51.69), // 30°18'51.69"E
-        0);
-    
-    sendCurrentPosition(
-        getRadians(59, 57, 11.44), // 59°57'11.44"N
-        getRadians(30, 18, 51.69), // 30°18'51.69"E
-        200); 
+    updateUI();
 
     //sendHearbeat(true);
 
@@ -47,22 +68,27 @@ void Test::test()
         getRadians(30, 18, 47.24), // 30°18'47.24"E
         10); */
 
-    sendVfrHud(
-        10,  // ground speed 10 m/s
-        180,   // heading south (180 deg)
-        70,  // 70% throttle
-        2);  // climb rate 2 m/s down
-
-    // Switch to settings
-
-    sendEkfStatusReport(0.9);
 //    sendHearbeat(true, MAV_STATE_CRITICAL);
     sendStatusText(MAV_SEVERITY_CRITICAL, "Some very very very long status text.");
+
+    updateUI();
+
     sendStatusText(MAV_SEVERITY_CRITICAL, "TEST");
+
+    updateUI();
 
     sendChannels(1100, 1500);
 
+    updateUI();
+
     sendHearbeat(true, MAV_STATE_ACTIVE);
+}
+
+void Test::updateUI()
+{
+    Battery.UpdateMeasurements();
+    m_gui.refresh();
+    delay(500);
 }
 
 void Test::testMessage(const mavlink_message_t& msg)

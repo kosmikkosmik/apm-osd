@@ -53,7 +53,7 @@ void DistanceAlertClass::handleMessage(const mavlink_message_t* pMsg)
 
         case MAVLINK_MSG_ID_SYS_STATUS:
         {
-            m_pBattery->SetBatteryPercentage(mavlink_msg_sys_status_get_battery_remaining(pMsg));
+            m_pBattery->SetApmBatteryPercentage(mavlink_msg_sys_status_get_battery_remaining(pMsg));
             m_pBattery->SetVoltage(float(mavlink_msg_sys_status_get_voltage_battery(pMsg)) / 1000.0);
         }
         break;

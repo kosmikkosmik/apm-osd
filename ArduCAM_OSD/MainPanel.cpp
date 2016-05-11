@@ -41,6 +41,8 @@ void MainPanel::write()
 
     panFlightMode(RIGHT_COLUMN - 5, bottomRow);
 
+    panThr(BATTERY_COLUMN + 7, bottomRow);
+
     panBatteryPercent(BATTERY_COLUMN, bottomRow);
 
     if (DistanceAlert.hasHomePosition())
@@ -71,8 +73,19 @@ void MainPanel::panAlt(int col, int row) const
 
     // climb rate up
     float climbRate = m_aircraft.getClimbRate();
-
-    m_osd.setPanel(col, row - 1);
+    m_osd.setPanel(col + 1, row + 1);
+    m_osd.openPanel();
+    if (fabs(climbRate) > 0.1) // 5cm/sec
+    {
+        m_osd.printf_P(PSTR("%+3.1f "), climbRate);
+    }
+    else
+    {
+        m_osd.print_P(PSTR("    "));
+    }
+    m_osd.closePanel();
+    
+/*    m_osd.setPanel(col, row - 1);
     m_osd.openPanel();
     if (climbRate > 0)
     {
@@ -95,7 +108,7 @@ void MainPanel::panAlt(int col, int row) const
         m_osd.print(CLIMB_NO);
     }
     m_osd.closePanel();
-
+    */
 }
 
 void MainPanel::panVelocity(int first_col, int first_line) const
@@ -124,7 +137,7 @@ void MainPanel::panThr(int first_col, int first_line) const
 {
     m_osd.setPanel(first_col, first_line);
     m_osd.openPanel();
-    m_osd.printf("%c%3.0i%c", 0x02, m_aircraft.getThrottle(), 0x25);
+    m_osd.printf_P(PSTR("th:%-3i"), m_aircraft.getThrottle());
     m_osd.closePanel();
 }
 
@@ -157,10 +170,38 @@ void MainPanel::panHomeDis(int first_col, int first_line) const
         m_osd.printf("%c:----", HOME_CHAR);
     }
     m_osd.closePanel();
+
+    float speed = round(m_aircraft.getGroundSpeed());
+    m_osd.setPanel(first_col + 1, first_line + 1);
+    m_osd.openPanel();
+    if (fabs(speed) > 1) // 1m/sec
+    {
+        m_osd.printf_P(PSTR("%+3.0f "), speed);
+    }
+    else
+    {
+        m_osd.print_P(PSTR("   "));
+    }
+    m_osd.closePanel();
 }
 
 
 void MainPanel::panBatteryVoltage(int first_col, int first_line) const
+{
+    float vPerCell = m_aircraft.getBattery().GetVoltage();
+    uint8_t cellCount = m_aircraft.getBattery().GetCellCount();
+    if (cellCount != 0)
+    {
+        vPerCell /= cellCount;
+    }
+
+    m_osd.setPanel(first_col, first_line);
+    m_osd.openPanel();
+    m_osd.printf_P(PSTR("%.2fv"), round(vPerCell*100)/100);
+    m_osd.closePanel();
+}
+
+void MainPanel::panBatteryPercent(int first_col, int first_line) const
 {
     char batteryChar;
 
@@ -186,25 +227,10 @@ void MainPanel::panBatteryVoltage(int first_col, int first_line) const
         batteryChar = 184;
     }
 
-    float vPerCell = m_aircraft.getBattery().GetVoltage();
-    uint8_t cellCount = m_aircraft.getBattery().GetCellCount();
-    if (cellCount != 0)
-    {
-        vPerCell /= cellCount;
-    }
-
-    m_osd.setPanel(first_col, first_line);
-    m_osd.openPanel();
-    m_osd.printf("%c%.1f", batteryChar, round(vPerCell*10)/10);
-    m_osd.closePanel();
-}
-
-void MainPanel::panBatteryPercent(int first_col, int first_line) const
-{
     m_osd.setPanel(first_col, first_line);
     m_osd.openPanel();
 
-    m_osd.printf_P(PSTR("%i%% "), Battery.GetBatteryPercentage());
+    m_osd.printf_P(PSTR("%c%i%% "), batteryChar, Battery.GetBatteryPercentage());
     m_osd.closePanel();
 }
 
@@ -274,11 +300,13 @@ void MainPanel::panStatus(int first_col, int first_line)
 {
     const char* str = "         ";
     const char* fsReason = NULL;
-
+    bool armedChanged = false;
     bool shouldFlash = false;
     bool shouldErase = false;
 
-    if ((m_lastState != m_aircraft.getState()) || (m_lastArmed != m_aircraft.armed()))
+    armedChanged = m_lastArmed != m_aircraft.armed();
+
+    if ((m_lastState != m_aircraft.getState()) || armedChanged)
     {
         m_lastState = m_aircraft.getState();
         m_lastArmed = m_aircraft.armed();
@@ -294,6 +322,8 @@ void MainPanel::panStatus(int first_col, int first_line)
     switch (m_aircraft.getState())
     {
     case MAV_STATE_ACTIVE:
+        break;
+
     case MAV_STATE_STANDBY:
         if (m_aircraft.armed())
         {
@@ -304,8 +334,10 @@ void MainPanel::panStatus(int first_col, int first_line)
             str = "disarmed ";
             shouldErase = false;
         }
+
         break;
 
+        /*
     case MAV_STATE_BOOT:
         str = "powering";
         break;
@@ -313,6 +345,7 @@ void MainPanel::panStatus(int first_col, int first_line)
     case MAV_STATE_CALIBRATING:
         str = "calibrate";
         break;
+        */
 
     case MAV_STATE_CRITICAL:
         str = "failsafe";
@@ -322,15 +355,17 @@ void MainPanel::panStatus(int first_col, int first_line)
             fsReason = "radio";
         }
         break;
-
+        /*
     case MAV_STATE_EMERGENCY:
         str = "emergency";
         shouldFlash = true;
         break;
 
+        
     case MAV_STATE_POWEROFF:
         str = "  off  "; 
         break;
+        */
 
     default:
         break;

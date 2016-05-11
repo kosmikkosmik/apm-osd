@@ -7,13 +7,14 @@ const uint16_t RC_MIN = 1100;
 // Up/down - channel 2. Up: 1100, Down: 1900
 // Left/right - channel 1. Left: 1100, Right: 1900
 
-GUI::GUI(OSD& osd, const Aircraft& aircraft):
+GUI::GUI(OSD& osd, Aircraft& aircraft):
 m_osd(osd),
 m_aircraft(aircraft),
-m_currentPanel(Panel_Main),
+m_currentPanel(Panel_Settings),
 m_clearPanel(false),
 m_mainPanel(osd, aircraft),
 m_settingsPanel(osd, aircraft),
+m_ccPanel(osd, aircraft),
 m_wasConnected(false),
 m_wasInSync(false),
 m_lastCommand(Command_None)
@@ -24,6 +25,16 @@ void GUI::processMessage(const mavlink_message_t& msg)
 {
     switch (msg.msgid)
     {
+    case MAVLINK_MSG_ID_MAG_CAL_PROGRESS:
+    case MAVLINK_MSG_ID_MAG_CAL_REPORT:
+    {
+        if (m_aircraft.getCompassCalibrationStatus() != MAG_CAL_NOT_STARTED)
+        {
+            setCurrentPanel(Panel_CompassCalibration);
+        }
+    }
+    break;
+
     case MAVLINK_MSG_ID_RC_CHANNELS:
     {
         if (!m_aircraft.armed() && ParameterManager.isInSync())
@@ -49,40 +60,24 @@ GUI::Command GUI::getCommand(const mavlink_message_t& msg) const
     uint16_t rcX = mavlink_msg_rc_channels_get_chan1_raw(&msg);
     uint16_t rcY = mavlink_msg_rc_channels_get_chan2_raw(&msg);
 
+    if ((rcX >= RC_MAX) && (rcY >= RC_MAX))
+    {
+        return GUI::Command_CompassCalibration;
+    }
+
     if ((rcX >= RC_MAX) || (rcX <= RC_MIN))
     {
-        if ((rcY >= RC_MAX) || (rcY <= RC_MIN))
-        {
-            return GUI::Command_None;
-        }
-        else
-        {
-            return (rcX >= RC_MAX) ? GUI::Command_Right : GUI::Command_Left;
-        }
+        return GUI::Command_NextPanel;
     }
-    else
-    {
-        if (rcY >= RC_MAX)
-        {
-            return GUI::Command_Down;
-        }
-        else if (rcY <= RC_MIN)
-        {
-            return GUI::Command_Up;
-        }
-        else
-        {
-            return GUI::Command_None;
-        }
-    }
+
+    return GUI::Command_None;
 }
 
 void GUI::performCommand(Command command)
 {
     switch (command)
     {
-    case Command_Left:
-    case Command_Right:
+    case Command_NextPanel:
         if (m_currentPanel == Panel_Main)
         {
             setCurrentPanel(Panel_Settings);
@@ -90,6 +85,19 @@ void GUI::performCommand(Command command)
         else
         {
             setCurrentPanel(Panel_Main);
+        }
+        break;
+
+    case Command_CompassCalibration:
+        {
+            if (m_aircraft.getCompassCalibrationStatus() == MAG_CAL_NOT_STARTED)
+            {
+                m_aircraft.beginCompassCalibration();
+            }
+            else
+            {
+                m_aircraft.cancelCompassCalibration();
+            }
         }
         break;
     }
@@ -158,6 +166,10 @@ void GUI::refresh()
     case Panel_Settings:
         m_settingsPanel.write();
         break;
+
+    case Panel_CompassCalibration:
+        m_ccPanel.write();
+        break;
     }
 }
 
@@ -189,7 +201,7 @@ void GUI::displayCentered(int row, int width, const char* str)
 
     m_osd.setPanel((MAX_PANEL_WIDTH - width) / 2 + 1, row);
     m_osd.openPanel();
-    m_osd.printf("%s", m_formattingBuffer);
+    m_osd.print(m_formattingBuffer);
     m_osd.closePanel();
 
     memset(m_formattingBuffer, 0x20, width);
@@ -201,6 +213,6 @@ void GUI::displayCentered(int row, int width, const char* str)
 
     m_osd.setPanel((MAX_PANEL_WIDTH - width) / 2 + 1, row + 1);
     m_osd.openPanel();
-    m_osd.printf("%s", m_formattingBuffer);
-    m_osd.closePanel();
+    m_osd.print(m_formattingBuffer);
+    m_osd.closePanel(); 
 }
